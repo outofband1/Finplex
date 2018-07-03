@@ -25,19 +25,19 @@ public:
 	}
 
 	inline
-		const TYPE& getEntry(const int& row, const int& col)
+	const TYPE& getEntry(const int& row, const int& col)
 	{
 			return entries[row * COLUMNS + col];
 		}
 
 	inline
-		void setEntry(const int& row, const int& col, const TYPE& val)
+	void setEntry(const int& row, const int& col, const TYPE& val)
 	{
 			entries[row * COLUMNS + col] = val;
 		}
 
 	inline
-		void pivot(const int& row, const int& col)
+	void pivot(const int& row, const int& col)
 	{
 			const TYPE& multValue = 1 / getEntry(row, col);
 			multiplyRow(row, multValue);
@@ -122,7 +122,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	std::cout << std::endl;
 	system("pause");
 	return 0;
-}
+}    
 
 
 
