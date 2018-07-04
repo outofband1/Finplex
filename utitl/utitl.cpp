@@ -1,166 +1,180 @@
-
-#include <stdio.h>
+#include "Simplex.h"
 #include <tchar.h>
 #include <iostream>
-#include <ostream>
-#include <memory>
-#include <string>
-#include <map>
 #include <vector>
+#include <memory>
+#include <map>
 
 
-// M columns, N rows
-template <typename TYPE, int ROWS, int COLUMNS>
-class SimplexTableau
+class LinearCurvePiece
 {
 public:
-	void setTableau(const TYPE values[COLUMNS * ROWS])
-	{
-		memcpy(entries, values, ROWS * COLUMNS * sizeof(TYPE));
-	}
+    LinearCurvePiece(const float& slope, const float& slopeIntercept) :
+        a_(slope),
+        b_(slopeIntercept)
+    {
 
-	inline
-		const TYPE& getEntry(const size_t& row, const size_t& col)
-	{
-			return entries[row * COLUMNS + col];
-		}
+    }
 
-	inline
-		void setEntry(const size_t& row, const size_t& col, const TYPE& val)
-	{
-			entries[row * COLUMNS + col] = val;
-	}
+    const float& getSlope() const
+    {
+        return a_;
+    }
 
-	void print()
-	{
-		std::cout.precision(2);
-		std::cout << std::fixed << std::showpos;
-		std::cout << std::endl;
-		for (size_t i = 0; i < ROWS; i++) // row
-		{
-			for (size_t j = 0; j < COLUMNS; j++) // column
-			{
-				std::cout << getEntry(i, j);
-				if (j < COLUMNS - 1)
-				{
-					std::cout << ", ";
-				}
-			}
+    const float& getSlopeIntercept() const
+    {
+        return b_;
+    }
+private:
+    float a_, b_;
+};
 
-			std::cout << std::endl;
-		}
-		std::cout << std::endl;
-	}
+class PieceWiseLinearCurve
+{
+public:
 
-	void Solve()
-	{
-		bool done = false;
-		while (!done)
-		{
-			print();
-			// find entering variable / pivot column
-			size_t enteringColumnIndex = -1;
-			for (size_t i = 0; i < COLUMNS; i++)
-			{
-				if (getEntry(0, i) < 0)
-				{
-					enteringColumnIndex = i;
-					break;
-				}
-			}
+    void addCurvePiece(const float& slope, const float& slopeIntercept)
+    {
+        curvePieces_.push_back(LinearCurvePiece(slope, slopeIntercept));
+    }
 
-			if (enteringColumnIndex == -1)
-			{
-				done = true;
-				continue;
-			}
-
-			// find pivot row
-			int pivotRow = -1;
-			TYPE smallestRatio = std::numeric_limits<TYPE>::max();
-			for (size_t i = 1; i < ROWS; i++)
-			{
-				TYPE evc = getEntry(i, enteringColumnIndex); // entering variable coefficient
-				if (evc <= 0)
-					continue;
-				TYPE rhs = getEntry(i, COLUMNS-1); // right hand side
-				
-				TYPE newRatio = rhs / evc;
-				
-				if (newRatio < smallestRatio)
-				{
-					smallestRatio = newRatio;
-					pivotRow = i;
-				}
-			}
-
-			if (pivotRow == -1)
-			{
-				std::cout << "Problem unbounded" << std::endl;
-				return; // all coefficients negative -> problem unbounded
-			}
-				
-
-			pivot(pivotRow, enteringColumnIndex);
-		}
-	}
+    const std::vector<LinearCurvePiece>& getCurvePieces() const
+    {
+        return curvePieces_;
+    }
 
 private:
-	inline
-		void multiplyRow(const size_t& row, const TYPE& multiplier)
-	{
-		for (size_t i = row * COLUMNS; i < row * COLUMNS + COLUMNS; i++)
-		{
-			entries[i] *= multiplier;
-		}
-	}
+    std::vector<LinearCurvePiece> curvePieces_;
+};
 
-	inline
-		void pivot(const size_t& row, const size_t& col)
-	{
-			const TYPE& multValue = 1 / getEntry(row, col);
-			multiplyRow(row, multValue);
+class Utility
+{
+public:
+    void setCurve(const PieceWiseLinearCurve& curve)
+    {
+        curve_ = curve;
+    }
 
-			for (size_t i = 0; i < ROWS; i++)
-			{
-				if (i != row && getEntry(i, col) != 0)
-				{
-					TYPE pivotMult = getEntry(i, col);
-					for (size_t j = 0; j < COLUMNS; j++)
-					{
-						TYPE newValue = getEntry(i, j) - pivotMult * getEntry(row, j);
-						setEntry(i, j, newValue);
-					}
-				}
+    const PieceWiseLinearCurve& getCurve() const
+    {
+        return curve_;
+    }
+private:
 
-			}
-		}
 
-	TYPE entries[COLUMNS * ROWS];
+    PieceWiseLinearCurve curve_;
+};
+
+class Commodity
+{
+public:
+
+private:
 };
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	SimplexTableau<float, 3, 5> m;
+    std::map<std::shared_ptr<Commodity>, std::map<std::shared_ptr<Utility>, float>> commodities;
 
-	float data[] =
-	{
-		-2, -1, +0, +0, +0,
-		-1, +1, +1, +0, +1,
-		+1, -2, +0, +1, +2
-	};
+    std::shared_ptr<Commodity> x1 = std::make_shared<Commodity>();
+    std::shared_ptr<Commodity> x2 = std::make_shared<Commodity>();
 
-	m.setTableau(data);
+    std::shared_ptr<Utility> stuff = std::make_shared<Utility>();
+    PieceWiseLinearCurve stuffCurve;
+    stuffCurve.addCurvePiece(2, 0);
+    stuffCurve.addCurvePiece(1, 2);
+    stuffCurve.addCurvePiece(0.1f, 4.5f);
+    stuff->setCurve(stuffCurve);
 
-	m.Solve();
+    commodities[x1][stuff] = 1.0;
 
-	
+    std::shared_ptr<Utility> savings = std::make_shared<Utility>();
+    PieceWiseLinearCurve savingsCurve;
+    savingsCurve.addCurvePiece(0.3f, 0);
+    savingsCurve.addCurvePiece(0.0, 2);
+    savings->setCurve(savingsCurve);
+
+    commodities[x2][savings] = 1.0;
+
+    std::vector<std::shared_ptr<Utility>> utilities;
+    utilities.push_back(stuff);
+    utilities.push_back(savings);
 
 
-	std::cout << std::endl;
-	system("pause");
-	return 0;
-}    
+
+    size_t rowCount = 2; // cost row + spending constraint row
+    for (auto& utility : utilities)
+    {
+        rowCount += utility->getCurve().getCurvePieces().size();
+    }
+
+    //                commodities        utilities          constraints - costrow + rhs
+    size_t colCount = commodities.size() + utilities.size() + rowCount - 1 + 1;
+
+    float *tableauData = new float[colCount * rowCount];
+    // setup cost row
+    for (size_t i = 0; i < colCount; i++)
+    {
+        if (i < commodities.size())
+        {
+            tableauData[i] = 0;
+        }
+        else if (i < commodities.size() + utilities.size())
+        {
+            tableauData[i] = -1;
+        }
+        else
+        {
+            tableauData[i] = 0;
+        }
+    }
+
+    size_t rowIndex = 1; // row 0 is cost function
+    for (auto& utility : utilities)
+    {
+
+    }
+
+    SimplexTableau<float, 7, 11> m;
+
+    float data[] =
+    {
+        +0, +0, -1, -1, +0, +0, +0, +0, +0, +0, +0,
+        -2, +0, +1, +0, +1, +0, +0, +0, +0, +0, +0,
+        -1, +0, +1, +0, +0, +1, +0, +0, +0, +0, +2,
+        -0.1, +0, +1, +0, +0, +0, +1, +0, +0, +0, +4.5,
+        -0, -0.3, +0, +1, +0, +0, +0, +1, +0, +0, +0,
+        +0, +0, +0, +1, +0, +0, +0, +0, +1, +0, +2,
+        +1, +1, +0, +0, +0, +0, +0, +0, +0, +1, +8,
+    };
+
+    m.setTableau(data);
+    m.print();
+
+    float var[5];
+    float res;
+
+    m.Solve(res, var);
+
+    m.print();
+
+    std::cout << "Result: " << res << std::endl;
+
+    for (size_t i = 0; i < 5; i++)
+    {
+        std::cout << "basic " << i << " = " << var[i] << std::endl;
+    }
+
+
+
+
+
+
+
+    std::cout << std::endl;
+    system("pause");
+    return 0;
+}
 
 
 

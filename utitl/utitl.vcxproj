@@ -83,6 +83,9 @@
   <ItemGroup>
     <ClCompile Include="utitl.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Simplex.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
