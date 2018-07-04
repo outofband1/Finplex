@@ -36,22 +36,29 @@ public:
         entries_[row * COLUMNS + col] = val;
     }
 
-    void print()
-    {
-        if (!initialized_)
-        {
-            initialize();
-        }
+	void printBasicVariables()
+	{
+		std::cout.precision(2);
+		std::cout << std::fixed << std::showpos;
+		std::cout << std::endl;
 
+		if (!initialized_)
+		{
+			initialize();
+		}
+
+		for (size_t basicIndex = 0; basicIndex < basicCount_; basicIndex++)
+		{
+			TYPE val = getEntry(basic_[basicIndex].row, COLUMNS - 1);
+			std::cout << "Basic var " << basic_[basicIndex].col + 1 << ": " << val << std::endl;
+		}
+	}
+
+    void printTableau()
+    {
         std::cout.precision(2);
         std::cout << std::fixed << std::showpos;
         std::cout << std::endl;
-
-        for (size_t basicIndex = 0; basicIndex < basicCount_; basicIndex++)
-        {
-            TYPE val = getEntry(basic_[basicIndex].row, COLUMNS - 1);
-            std::cout << "Basic var " << basic_[basicIndex].col + 1 << ": " << val << std::endl;
-        }
 
         for (size_t i = 0; i < ROWS; i++) // row
         {

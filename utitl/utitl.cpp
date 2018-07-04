@@ -75,6 +75,7 @@ private:
 int _tmain(int argc, _TCHAR* argv[])
 {
     std::map<std::shared_ptr<Commodity>, std::map<std::shared_ptr<Utility>, float>> commodities;
+	std::map<std::shared_ptr<Commodity>, float> prices;
 
     std::shared_ptr<Commodity> x1 = std::make_shared<Commodity>();
     std::shared_ptr<Commodity> x2 = std::make_shared<Commodity>();
@@ -86,21 +87,25 @@ int _tmain(int argc, _TCHAR* argv[])
     stuffCurve.addCurvePiece(0.1f, 4.5f);
     stuff->setCurve(stuffCurve);
 
-    commodities[x1][stuff] = 1.0;
-
     std::shared_ptr<Utility> savings = std::make_shared<Utility>();
     PieceWiseLinearCurve savingsCurve;
     savingsCurve.addCurvePiece(0.3f, 0);
     savingsCurve.addCurvePiece(0.0, 2);
     savings->setCurve(savingsCurve);
 
+	commodities[x1][stuff] = 1.0;
+	commodities[x1][savings] = 0.0;
+	prices[x1] = 1.0;
+
+	commodities[x2][stuff] = 0.0;
     commodities[x2][savings] = 1.0;
+	prices[x2] = 1.0;
 
     std::vector<std::shared_ptr<Utility>> utilities;
     utilities.push_back(stuff);
     utilities.push_back(savings);
 
-
+	float money = 10;
 
     size_t rowCount = 2; // cost row + spending constraint row
     for (auto& utility : utilities)
@@ -112,6 +117,7 @@ int _tmain(int argc, _TCHAR* argv[])
     size_t colCount = commodities.size() + utilities.size() + rowCount - 1 + 1;
 
     float *tableauData = new float[colCount * rowCount];
+	memset(tableauData, 0, colCount * rowCount*sizeof(float));
     // setup cost row
     for (size_t i = 0; i < colCount; i++)
     {
@@ -129,15 +135,39 @@ int _tmain(int argc, _TCHAR* argv[])
         }
     }
 
-    size_t rowIndex = 1; // row 0 is cost function
-    for (auto& utility : utilities)
+    size_t colIndex = 0; 
+    for (auto& commodity: commodities)
     {
+		tableauData[(rowCount-1)*colCount + colIndex] = prices.find(commodity.first)->second;
+		tableauData[(rowCount - 1)*colCount + colCount-1] = money;
+		// row 0 is cost function
+		size_t rowIndex = 1;
+		size_t utilityCount = 0;
+		size_t pieceCount = 0;
+		for (auto& utility : commodity.second)
+		{
+			float factor = utility.second;
+			const PieceWiseLinearCurve& curve = utility.first->getCurve();
+			
+			
+			for (auto& piece : curve.getCurvePieces())
+			{
+				tableauData[rowIndex*colCount + colIndex] = -factor * piece.getSlope();
+				tableauData[rowIndex*colCount + colCount-1] = piece.getSlopeIntercept();
+				tableauData[rowIndex*colCount + commodities.size() + utilityCount] = 1.0;
+				tableauData[rowIndex*colCount + commodities.size() + commodity.second.size() + pieceCount] = 1.0;
+				pieceCount++;
+				rowIndex++;
+			}
+			utilityCount++;
+		}
 
+		colIndex++;
     }
 
     SimplexTableau<float, 7, 11> m;
 
-    float data[] =
+    /*float data[] =
     {
         +0, +0, -1, -1, +0, +0, +0, +0, +0, +0, +0,
         -2, +0, +1, +0, +1, +0, +0, +0, +0, +0, +0,
@@ -146,17 +176,19 @@ int _tmain(int argc, _TCHAR* argv[])
         -0, -0.3, +0, +1, +0, +0, +0, +1, +0, +0, +0,
         +0, +0, +0, +1, +0, +0, +0, +0, +1, +0, +2,
         +1, +1, +0, +0, +0, +0, +0, +0, +0, +1, +8,
-    };
+    };*/
 
-    m.setTableau(data);
-    m.print();
+    m.setTableau(tableauData);
+	m.printTableau();
 
     float var[5];
     float res;
 
     m.Solve(res, var);
 
-    m.print();
+    m.printTableau();
+
+	m.printBasicVariables();
 
     std::cout << "Result: " << res << std::endl;
 
@@ -165,7 +197,7 @@ int _tmain(int argc, _TCHAR* argv[])
         std::cout << "basic " << i << " = " << var[i] << std::endl;
     }
 
-
+	
 
 
 
