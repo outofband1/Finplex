@@ -148,11 +148,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Commodity.cpp" />
+    <ClCompile Include="PurchaseSolver.cpp" />
     <ClCompile Include="Utility.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Commodity.h" />
+    <ClInclude Include="PurchaseSolver.h" />
     <ClInclude Include="Simplex.h" />
     <ClInclude Include="Utility.h" />
   </ItemGroup>

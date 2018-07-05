@@ -4,11 +4,11 @@
 #include <vector>
 
 template <typename TYPE>
-class SimplexTableau
+class SimplexSolver
 {
 public:
 
-    SimplexTableau(const size_t& rows, const size_t& cols) :
+    SimplexSolver(const size_t& rows, const size_t& cols) :
         rowCount_(rows),
         colCount_(cols)
     {
