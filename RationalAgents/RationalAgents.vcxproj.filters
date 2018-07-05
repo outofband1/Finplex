@@ -30,6 +30,9 @@
     <ClCompile Include="PurchaseSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="tinyxml2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Simplex.h">
@@ -44,5 +47,16 @@
     <ClInclude Include="PurchaseSolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="tinyxml2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="def_utility.xml">
+      <Filter>Resource Files</Filter>
+    </Xml>
+    <Xml Include="def_commodity.xml">
+      <Filter>Resource Files</Filter>
+    </Xml>
   </ItemGroup>
 </Project>
