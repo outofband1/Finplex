@@ -1,5 +1,7 @@
 #pragma once
 #include <iostream>
+#include <memory>
+#include <vector>
 
 
 /*
@@ -15,44 +17,52 @@ float data[] =
 };
 */
 
-template <typename TYPE, int ROWS, int COLUMNS>
+template <typename TYPE>
 class SimplexTableau
 {
 public:
-    void setTableau(const TYPE values[COLUMNS * ROWS])
+
+    SimplexTableau(const int& rows, const int& cols) :
+        rowCount_(rows),
+        colCount_(cols)
     {
-        memcpy(entries_, values, ROWS * COLUMNS * sizeof(TYPE));
+        entries_.resize(rowCount_ * colCount_);
+    }
+
+    void setTableau(const std::vector<float>& values)
+    {
+        entries_ = values;
     }
 
     inline
     const TYPE& getEntry(const size_t& row, const size_t& col) const
     {
-        return entries_[row * COLUMNS + col];
+        return entries_[row * colCount_ + col];
     }
 
     inline
     void setEntry(const size_t& row, const size_t& col, const TYPE& val)
     {
-        entries_[row * COLUMNS + col] = val;
+        entries_[row * colCount_ + col] = val;
     }
 
-	void printBasicVariables()
-	{
-		std::cout.precision(2);
-		std::cout << std::fixed << std::showpos;
-		std::cout << std::endl;
+    void printBasicVariables()
+    {
+        std::cout.precision(2);
+        std::cout << std::fixed << std::showpos;
+        std::cout << std::endl;
 
-		if (!initialized_)
-		{
-			initialize();
-		}
+        if (!initialized_)
+        {
+            initialize();
+        }
 
-		for (size_t basicIndex = 0; basicIndex < basicCount_; basicIndex++)
-		{
-			TYPE val = getEntry(basic_[basicIndex].row, COLUMNS - 1);
-			std::cout << "Basic var " << basic_[basicIndex].col + 1 << ": " << val << std::endl;
-		}
-	}
+        for (size_t basicIndex = 0; basicIndex < basic_.size(); basicIndex++)
+        {
+            TYPE val = getEntry(basic_[basicIndex].row, colCount_ - 1);
+            std::cout << "Basic var " << basic_[basicIndex].col + 1 << ": " << val << std::endl;
+        }
+    }
 
     void printTableau()
     {
@@ -60,12 +70,12 @@ public:
         std::cout << std::fixed << std::showpos;
         std::cout << std::endl;
 
-        for (size_t i = 0; i < ROWS; i++) // row
+        for (size_t i = 0; i < rowCount_; i++) // row
         {
-            for (size_t j = 0; j < COLUMNS; j++) // column
+            for (size_t j = 0; j < colCount_; j++) // column
             {
                 std::cout << getEntry(i, j);
-                if (j < COLUMNS - 1)
+                if (j < colCount_ - 1)
                 {
                     std::cout << ", ";
                 }
@@ -76,7 +86,7 @@ public:
         std::cout << std::endl;
     }
 
-    void Solve(TYPE& max, TYPE variables[ROWS - 1])
+    void Solve(TYPE& max, std::vector<float>& variables)
     {
         bool done = false;
         while (!done)
@@ -108,23 +118,12 @@ public:
 
         findBasicVariables();
 
-        /*for (size_t i = 0; i < basicCount_; i++)
+        max = getEntry(0, colCount_ - 1);
+
+        for (size_t basicIndex = 0; basicIndex < basic_.size(); basicIndex++)
         {
-        if (getEntry(0, basic_[i].col) != 0)
-        {
-
-        }
-        }*/
-
-
-        max = getEntry(0, COLUMNS - 1);
-
-
-
-        for (size_t basicIndex = 0; basicIndex < basicCount_; basicIndex++)
-        {
-            TYPE val = getEntry(basic_[basicIndex].row, COLUMNS - 1);
-            variables[basicIndex] = val;
+            TYPE val = getEntry(basic_[basicIndex].row, colCount_ - 1);
+            variables.push_back(val);
         }
     }
 
@@ -137,7 +136,7 @@ private:
     inline
     void multiplyRow(const size_t& row, const TYPE& multiplier)
     {
-        for (size_t i = row * COLUMNS; i < row * COLUMNS + COLUMNS; i++)
+        for (size_t i = row * colCount_; i < row * colCount_ + colCount_; i++)
         {
             entries_[i] *= multiplier;
         }
@@ -146,7 +145,7 @@ private:
     inline
     size_t findEnteringVariableIndex() const
     {
-        for (size_t i = 0; i < COLUMNS; i++)
+        for (size_t i = 0; i < colCount_; i++)
         {
             if (getEntry(0, i) < 0)
             {
@@ -162,14 +161,14 @@ private:
     {
         int pivotRow = -1;
         TYPE smallestRatio = std::numeric_limits<TYPE>::max();
-        for (size_t i = 1; i < ROWS; i++)
+        for (size_t i = 1; i < rowCount_; i++)
         {
             TYPE evc = getEntry(i, enteringColumnIndex); // entering variable coefficient
             if (evc <= 0)
             {
                 continue;
             }
-            TYPE rhs = getEntry(i, COLUMNS - 1); // right hand side
+            TYPE rhs = getEntry(i, colCount_ - 1); // right hand side
 
             TYPE newRatio = rhs / evc;
 
@@ -189,12 +188,12 @@ private:
         const TYPE& multValue = 1 / getEntry(row, col);
         multiplyRow(row, multValue);
 
-        for (size_t i = 0; i < ROWS; i++)
+        for (size_t i = 0; i < rowCount_; i++)
         {
             if (i != row && getEntry(i, col) != 0)
             {
                 TYPE pivotMult = getEntry(i, col);
-                for (size_t j = 0; j < COLUMNS; j++)
+                for (size_t j = 0; j < colCount_; j++)
                 {
                     TYPE newValue = getEntry(i, j) - pivotMult * getEntry(row, j);
                     setEntry(i, j, newValue);
@@ -206,14 +205,13 @@ private:
 
     void findBasicVariables()
     {
-        size_t basicIndex = 0;
-        size_t nonbasicIndex = 0;
-        for (size_t col = 0; col < COLUMNS - 1; col++)
+        basic_.clear();
+        for (size_t col = 0; col < colCount_ - 1; col++)
         {
             int oneFound = 0;
             int otherFound = 0;
             size_t pivotRow = -1;
-            for (size_t row = 1; row < ROWS; row++)
+            for (size_t row = 1; row < rowCount_; row++)
             {
                 const TYPE& val = getEntry(row, col);
                 if (val == 1)
@@ -230,18 +228,15 @@ private:
 
             if (otherFound == 0 && oneFound == 1)
             {
-                basic_[basicIndex].col = col;
-                basic_[basicIndex].row = pivotRow;
-                basicIndex++;
+                BasicVariabel b;
+                b.col = col;
+                b.row = pivotRow;
+                basic_.push_back(b);
             }
-            else
-            {
-                nonBasicColumn_[nonbasicIndex] = col;
-                nonbasicIndex++;
-            }
+
         }
 
-        if (basicIndex + 1 < ROWS - 1)
+        if (basic_.size() != rowCount_ - 1)
         {
             std::cout << "Problem infeasable." << std::endl;
         }
@@ -253,12 +248,12 @@ private:
         findBasicVariables();
     }
 
-    const size_t nonBasicCount_ = 4;
-    const size_t basicCount_ = 5;
+    const size_t rowCount_;
+    const size_t colCount_;
 
-    TYPE entries_[COLUMNS * ROWS];
-    BasicVariabel basic_[5];
-    size_t nonBasicColumn_[4];
+    std::vector<TYPE> entries_;
+    std::vector<BasicVariabel> basic_;
+
     bool initialized_ = false;
 
 
