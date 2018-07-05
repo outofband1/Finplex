@@ -18,7 +18,7 @@ public:
 
     void clearAmountsAndPrices();
 
-    void createSimplexSolver(const float& money) const;
+	void OptimizeTimeAndPurchases(const float& money, std::map<std::shared_ptr<Commodity>, float>& purchases) const;
 
 private:
     struct PriceAndAmount

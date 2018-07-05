@@ -44,8 +44,17 @@ int _tmain(int argc, _TCHAR* argv[])
 		solver.registerUtility(utility.second);
 	}
     
-    // return res
-    solver.createSimplexSolver(money);
+	std::map<std::shared_ptr<Commodity>, float> purchases;
+
+	
+	solver.OptimizeTimeAndPurchases(money, purchases);
+	
+	
+
+	for (auto& purchase : purchases)
+	{
+		std::cout << purchase.first->getName() << ": " << purchase.second << std::endl;
+	}
 
     std::cout << std::endl;
     system("pause");

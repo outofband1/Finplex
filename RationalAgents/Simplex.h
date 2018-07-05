@@ -74,11 +74,11 @@ public:
 
     void Solve(TYPE& max, std::vector<float>& variables)
     {
+		basic_.reserve(rowCount_);
+		nonbasic_.reserve(rowCount_);
         bool done = false;
         while (!done)
         {
-            findBasicVariables();
-
             // find entering variable / pivot column
             size_t enteringColumnIndex = findEnteringVariableIndex();
 
@@ -245,7 +245,7 @@ private:
 
         }
 
-        if (basic_.size() != rowCount_ - 1)
+        if (basic_.size() != rowCount_ - 1) // start at 1 and cost row
         {
             std::cout << "Problem infeasable." << std::endl;
         }

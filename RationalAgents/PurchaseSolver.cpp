@@ -31,7 +31,7 @@ void PurchaseSolver::clearAmountsAndPrices()
     amountsAndPrices_.clear();
 }
 
-void PurchaseSolver::createSimplexSolver(const float& money) const
+void PurchaseSolver::OptimizeTimeAndPurchases(const float& money, std::map<std::shared_ptr<Commodity>, float>& purchases) const
 {
 
     size_t curvePieceCount = 0;
@@ -130,26 +130,18 @@ void PurchaseSolver::createSimplexSolver(const float& money) const
 
     SimplexSolver<float> m(rowCount, colCount);
 
-    for (int repeat = 0; repeat < 1; repeat++)
-    {
-        m.setTableau(tableauData);
+    m.setTableau(tableauData);
 
-        m.printTableau();
+    float maxedUtility;
+    std::vector<float> basicVariablesValues;
 
-        float res;
-        std::vector<float> var;
+	m.Solve(maxedUtility, basicVariablesValues);
 
-        m.Solve(res, var);
-
-        m.printTableau();
-
-        std::cout << "Result: " << res << std::endl;
-
-        int i = 0;
-        for (auto& v : var)
-        {
-            std::cout << "basic " << i << " = " << v << std::endl;
-            i++;
-        }
-    }
+	purchases.clear();
+	size_t varIndex = 0;
+	for (auto& com : commodities_)
+	{
+		purchases[com] = basicVariablesValues[varIndex];
+		varIndex++;
+	}
 }
