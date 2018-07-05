@@ -25,12 +25,30 @@ const std::vector<Utility::LinearCurvePiece>& Utility::PieceWiseLinearCurve::get
     return curvePieces_;
 }
 
-void Utility::setCurve(const Utility::PieceWiseLinearCurve& curve)
+Utility::Utility(const std::string name, const PieceWiseLinearCurve& curve) :
+    name_(name),
+    curve_(curve)
 {
-    curve_ = curve;
+
+}
+
+void Utility::setDescription(const std::string description)
+{
+    description_ = description;
 }
 
 const Utility::PieceWiseLinearCurve& Utility::getCurve() const
 {
     return curve_;
 }
+
+const std::string& Utility::getName() const
+{
+    return name_;
+}
+
+const std::string& Utility::getDescription() const
+{
+    return description_;
+}
+

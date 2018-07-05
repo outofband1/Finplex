@@ -23,8 +23,16 @@ public:
         std::vector<LinearCurvePiece> curvePieces_;
     };
 
-    void setCurve(const PieceWiseLinearCurve& curve);
+    Utility(const std::string name, const PieceWiseLinearCurve& curve);
+
+    void setDescription(const std::string description);
+
     const PieceWiseLinearCurve& getCurve() const;
+    const std::string& getName() const;
+    const std::string& getDescription() const;
 private:
+    std::string name_;
+    std::string description_;
+
     PieceWiseLinearCurve curve_;
 };
