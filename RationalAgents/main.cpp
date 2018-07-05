@@ -6,15 +6,11 @@
 #include <map>
 
 #include "Utility.h"
+#include "Commodity.h"
 
 
 
-class Commodity
-{
-public:
 
-private:
-};
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -22,28 +18,26 @@ int _tmain(int argc, _TCHAR* argv[])
     std::map<std::shared_ptr<Commodity>, float> prices;
     std::map<std::shared_ptr<Commodity>, float> amounts;
 
-    std::shared_ptr<Commodity> x1 = std::make_shared<Commodity>();
-    std::shared_ptr<Commodity> x2 = std::make_shared<Commodity>();
-    std::shared_ptr<Commodity> x3 = std::make_shared<Commodity>();
+    std::shared_ptr<Commodity> x1 = std::make_shared<Commodity>("Food");
+    std::shared_ptr<Commodity> x2 = std::make_shared<Commodity>("Drink");
+    std::shared_ptr<Commodity> x3 = std::make_shared<Commodity>("Savings");
 
-    std::shared_ptr<Utility> food = std::make_shared<Utility>();
+
     Utility::PieceWiseLinearCurve foodCurve;
     foodCurve.addCurvePiece(2, 0);
     foodCurve.addCurvePiece(1, 2);
     foodCurve.addCurvePiece(0.1f, 4.5f);
-    food->setCurve(foodCurve);
+    std::shared_ptr<Utility> food = std::make_shared<Utility>("Nutrition", foodCurve);
 
-    std::shared_ptr<Utility> drink = std::make_shared<Utility>();
     Utility::PieceWiseLinearCurve drinkCurve;
-    drinkCurve.addCurvePiece(2, 0);
+    drinkCurve.addCurvePiece(2.0, 0);
     drinkCurve.addCurvePiece(0.1f, 4.5f);
-    drink->setCurve(drinkCurve);
+    std::shared_ptr<Utility> drink = std::make_shared<Utility>("Water", drinkCurve);
 
-    std::shared_ptr<Utility> savings = std::make_shared<Utility>();
     Utility::PieceWiseLinearCurve savingsCurve;
     savingsCurve.addCurvePiece(0.3f, 0);
     savingsCurve.addCurvePiece(0.01f, 2);
-    savings->setCurve(savingsCurve);
+    std::shared_ptr<Utility> savings = std::make_shared<Utility>("Savings", savingsCurve);
 
     commodities[x1][food] = 1.0f;
     commodities[x1][savings] = 0.0f;
@@ -62,24 +56,21 @@ int _tmain(int argc, _TCHAR* argv[])
     commodities[x3][drink] = 0.0f;
     prices[x3] = 1.0f;
 
-    std::vector<std::shared_ptr<Utility>> utilities;
-    utilities.push_back(food);
-    utilities.push_back(drink);
-    utilities.push_back(savings);
-
-    float money = 80;
+    float money = 8;
 
 
+    size_t utilityCount = 0;
     size_t curvePieceCount = 0;
-    for (auto& utility : utilities)
+    for (auto& utility : commodities.begin()->second)
     {
-        curvePieceCount += utility->getCurve().getCurvePieces().size();
+        utilityCount++;
+        curvePieceCount += utility.first->getCurve().getCurvePieces().size();
     }
 
     size_t rowCount = 2 + amounts.size() + curvePieceCount; // 2= cost row + spending constraint row
 
     //                commodities          utilities          constraints - costrow + rhs
-    size_t colCount = commodities.size() + utilities.size() + rowCount - 1 + 1;
+    size_t colCount = commodities.size() + utilityCount + rowCount - 1 + 1;
 
     std::vector<float> tableauData;
     tableauData.resize(colCount * rowCount);
@@ -91,7 +82,7 @@ int _tmain(int argc, _TCHAR* argv[])
         {
             tableauData[i] = 0;
         }
-        else if (i < commodities.size() + utilities.size())
+        else if (i < commodities.size() + utilityCount)
         {
             tableauData[i] = -1;
         }
@@ -106,7 +97,7 @@ int _tmain(int argc, _TCHAR* argv[])
     {
         tableauData[(curvePieceCount + 1)*colCount + colIndex] = prices.find(commodity.first)->second;
         tableauData[(curvePieceCount + 1)*colCount + colCount - 1] = money;
-        tableauData[(curvePieceCount + 1)*colCount + commodities.size() + utilities.size() + curvePieceCount] = 1;
+        tableauData[(curvePieceCount + 1)*colCount + commodities.size() + utilityCount + curvePieceCount] = 1;
         size_t rowIndex = 1; // row 0 is cost function
         size_t utilityCount = 0;
         size_t pieceCount = 0;
@@ -140,7 +131,7 @@ int _tmain(int argc, _TCHAR* argv[])
         if (amount != amounts.end())
         {
             tableauData[(rowindex)* colCount + colIndex] = 1;
-            tableauData[(rowindex)*colCount + commodities.size() + utilities.size() + curvePieceCount + colIndex + 1] = 1;
+            tableauData[(rowindex)*colCount + commodities.size() + utilityCount + curvePieceCount + colIndex + 1] = 1;
             tableauData[(rowindex)*colCount + colCount - 1] = amount->second;
             rowindex++;
             colIndex++;
@@ -160,7 +151,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
         m.Solve(res, var);
 
-        //m.printTableau();
+        m.printTableau();
 
         std::cout << "Result: " << res << std::endl;
 
