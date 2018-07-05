@@ -3,20 +3,6 @@
 #include <memory>
 #include <vector>
 
-
-/*
-TODO:
-unhandled when multiple optimal solutions. f.x
-SimplexTableau<float, 3, 5> m;
-
-float data[] =
-{
--1, -0.5, +0, +0, +0,
-+2, +1, +1, +0, +4,
-+1, +2, +0, +1, +3,
-};
-*/
-
 template <typename TYPE>
 class SimplexTableau
 {
@@ -118,6 +104,21 @@ public:
 
         findBasicVariables();
 
+        bool alternateSolutionFound = false;
+        for (const Variabel& v : nonbasic_)
+        {
+            if (abs(getEntry(0, v.col)) < 10E-6) // if an alternate solution exist we will have a nonbasic var with cost = 0
+            {
+                size_t pivotRow = findPivotRowIndex(v.col);
+                pivot(pivotRow, v.col);
+                alternateSolutionFound = true;
+            }
+        }
+        if (alternateSolutionFound)
+        {
+            findBasicVariables();
+        }
+
         max = getEntry(0, colCount_ - 1);
 
         for (size_t basicIndex = 0; basicIndex < basic_.size(); basicIndex++)
@@ -128,7 +129,7 @@ public:
     }
 
 private:
-    struct BasicVariabel
+    struct Variabel
     {
         size_t row, col;
     };
@@ -206,6 +207,7 @@ private:
     void findBasicVariables()
     {
         basic_.clear();
+        nonbasic_.clear();
         for (size_t col = 0; col < colCount_ - 1; col++)
         {
             int oneFound = 0;
@@ -228,10 +230,17 @@ private:
 
             if (otherFound == 0 && oneFound == 1)
             {
-                BasicVariabel b;
+                Variabel b;
                 b.col = col;
                 b.row = pivotRow;
                 basic_.push_back(b);
+            }
+            else
+            {
+                Variabel n;
+                n.col = col;
+                n.row = pivotRow;
+                nonbasic_.push_back(n);
             }
 
         }
@@ -252,7 +261,8 @@ private:
     const size_t colCount_;
 
     std::vector<TYPE> entries_;
-    std::vector<BasicVariabel> basic_;
+    std::vector<Variabel> basic_;
+    std::vector<Variabel> nonbasic_;
 
     bool initialized_ = false;
 
