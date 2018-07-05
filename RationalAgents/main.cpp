@@ -8,77 +8,122 @@
 #include "Utility.h"
 #include "Commodity.h"
 #include "PurchaseSolver.h"
+#include "tinyxml2.h"
+
+using namespace tinyxml2;
+
+void readUtilityDefs(std::map<std::string, std::shared_ptr<Utility>>& utilityDefs)
+{
+	XMLDocument utilityDoc;
+	utilityDoc.LoadFile("def_utility.xml");
+
+	XMLElement* main = utilityDoc.FirstChildElement("utilities");
+
+	XMLElement* utility = main->FirstChildElement("utility");
+	while (utility)
+	{
+		std::string id = utility->FirstChildElement("id")->GetText();
+		std::string name = utility->FirstChildElement("name")->GetText();
+		std::string description = utility->FirstChildElement("description")->GetText();
+
+		Utility::PieceWiseLinearCurve utilCurve;
+		XMLElement* curve = utility->FirstChildElement("curve");
+		XMLElement* curvePiece = curve->FirstChildElement("piece");
+		while (curvePiece)
+		{
+			float slope = std::atof(curvePiece->FirstChildElement("slope")->GetText());
+			float intercept = std::atof(curvePiece->FirstChildElement("intercept")->GetText());
+			utilCurve.addCurvePiece(slope, intercept);
+
+			curvePiece = curvePiece->NextSiblingElement();
+		}
+
+		std::shared_ptr<Utility> util = std::make_shared<Utility>(name, utilCurve);
+		util->setDescription(description);
+
+		utilityDefs[id] = util;
+
+		utility = utility->NextSiblingElement();
+	}
+}
+
+void readCommodityDefs(std::map<std::string, std::shared_ptr<Commodity>>& commodityDefs, const std::map<std::string, std::shared_ptr<Utility>>& utilityDefs)
+{
+	XMLDocument commodityDoc;
+	commodityDoc.LoadFile("def_commodity.xml");
+
+	XMLElement* main = commodityDoc.FirstChildElement("commodities");
+
+	XMLElement* commodity = main->FirstChildElement("commodity");
+	while (commodity)
+	{
+		std::string id = commodity->FirstChildElement("id")->GetText();
+		std::string name = commodity->FirstChildElement("name")->GetText();
+		std::string description = commodity->FirstChildElement("description")->GetText();
+
+		std::shared_ptr<Commodity> com = std::make_shared<Commodity>(name);
+		com->setDescription(description);
+
+		XMLElement* utilities = commodity->FirstChildElement("utilities");
+		XMLElement* utility = utilities->FirstChildElement("utility");
+		while (utility)
+		{
+			std::string utilityId = utility->FirstChildElement("id")->GetText();
+			float amount = std::atof(utility->FirstChildElement("amount")->GetText());
+			
+			
+			auto& actualUtility = utilityDefs.find(utilityId)->second;
+			com->addUtility(actualUtility, amount);
+
+			utility = utility->NextSiblingElement();
+		}
+
+		commodityDefs[id] = com;
+
+		commodity = commodity->NextSiblingElement();
+	}
+
+}
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-    std::map<std::shared_ptr<Commodity>, std::map<std::shared_ptr<Utility>, float>> commodities;
-    std::map<std::shared_ptr<Commodity>, float> prices;
-    std::map<std::shared_ptr<Commodity>, float> amounts;
+	std::map<std::string, std::shared_ptr<Utility>> utilityDefs;
+	std::map<std::string, std::shared_ptr<Commodity>> commodityDefs;
 
-    std::shared_ptr<Commodity> x1 = std::make_shared<Commodity>("Food");
-    std::shared_ptr<Commodity> x2 = std::make_shared<Commodity>("Drink");
-    std::shared_ptr<Commodity> x3 = std::make_shared<Commodity>("Savings");
+	readUtilityDefs(utilityDefs);
+	readCommodityDefs(commodityDefs, utilityDefs);
 
-
-    Utility::PieceWiseLinearCurve foodCurve;
-    foodCurve.addCurvePiece(2, 0);
-    foodCurve.addCurvePiece(1, 2);
-    foodCurve.addCurvePiece(0.1f, 4.5f);
-    std::shared_ptr<Utility> food = std::make_shared<Utility>("Nutrition", foodCurve);
-
-    Utility::PieceWiseLinearCurve drinkCurve;
-    drinkCurve.addCurvePiece(2.0, 0);
-    drinkCurve.addCurvePiece(0.1f, 4.5f);
-    std::shared_ptr<Utility> drink = std::make_shared<Utility>("Water", drinkCurve);
-
-    Utility::PieceWiseLinearCurve savingsCurve;
-    savingsCurve.addCurvePiece(0.3f, 0);
-    savingsCurve.addCurvePiece(0.01f, 2);
-    std::shared_ptr<Utility> savings = std::make_shared<Utility>("Savings", savingsCurve);
-
-    x1->addUtility(food, 1.0f);
-    x1->addUtility(drink, 0.1f);
-
-    commodities[x1][food] = 1.0f;
-    commodities[x1][savings] = 0.0f;
-    commodities[x1][drink] = 0.1f;
-    prices[x1] = 1.1f;
-    amounts[x1] = 3.0f;
-
-    x2->addUtility(food, 0.1f);
-    x2->addUtility(drink, 1.0f);
-
-    commodities[x2][food] = 0.1f;
-    commodities[x2][savings] = 0.0f;
-    commodities[x2][drink] = 1.0f;
-    prices[x2] = 1.2f;
-    amounts[x2] = 4.0f;
-
-    x3->addUtility(savings, 1.0f);
-
-    commodities[x3][food] = 0.0f;
-    commodities[x3][savings] = 1.0f;
-    commodities[x3][drink] = 0.0f;
-    prices[x3] = 1.3f;
-
-    float money = 8;
+    float money = 80;
 
     PurchaseSolver solver;
-    solver.registerCommodity(x1);
-    solver.registerCommodity(x2);
-    solver.registerCommodity(x3);
 
-    solver.registerUtility(food);
-    solver.registerUtility(drink);
-    solver.registerUtility(savings);
+	int count = 0;
+	for (auto& commodity : commodityDefs)
+	{
+		solver.registerCommodity(commodity.second);
+		switch (count)
+		{
+		case 0:
+			solver.setPriceAndAmount(commodity.second, 1.1f, 3.0f);
+			break;
+		case 1:
+			solver.setPriceAndAmount(commodity.second, 1.2f, 4.0f);
+			break;
+		case 2:
+			solver.setPriceAndAmount(commodity.second, 1.3f, -1.0f);
+			break;
+		}
 
-    solver.setPriceAndAmount(x1, 1.1f, 3.0f);
-    solver.setPriceAndAmount(x2, 1.2f, 4.0f);
-    solver.setPriceAndAmount(x3, 1.3f, -1.0f);
-
-
+		count++;
+	}
+    
+	for (auto& utility : utilityDefs)
+	{
+		solver.registerUtility(utility.second);
+	}
+    
     // return res
-    solver.createSimplexSolver(8);
+    solver.createSimplexSolver(money);
 
     std::cout << std::endl;
     system("pause");
