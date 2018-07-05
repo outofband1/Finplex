@@ -22,7 +22,7 @@ class SimplexTableau
 {
 public:
 
-    SimplexTableau(const int& rows, const int& cols) :
+    SimplexTableau(const size_t& rows, const size_t& cols) :
         rowCount_(rows),
         colCount_(cols)
     {
@@ -103,7 +103,7 @@ public:
             }
 
             // find pivot row
-            int pivotRow = findPivotRowIndex(enteringColumnIndex);
+            size_t pivotRow = findPivotRowIndex(enteringColumnIndex);
 
             if (pivotRow == -1)
             {
@@ -159,7 +159,7 @@ private:
     inline
     size_t findPivotRowIndex(const size_t& enteringColumnIndex) const
     {
-        int pivotRow = -1;
+        size_t pivotRow = -1;
         TYPE smallestRatio = std::numeric_limits<TYPE>::max();
         for (size_t i = 1; i < rowCount_; i++)
         {

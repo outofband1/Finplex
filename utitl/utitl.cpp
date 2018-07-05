@@ -5,65 +5,9 @@
 #include <memory>
 #include <map>
 
-
-class LinearCurvePiece
-{
-public:
-    LinearCurvePiece(const float& slope, const float& slopeIntercept) :
-        a_(slope),
-        b_(slopeIntercept)
-    {
-
-    }
-
-    const float& getSlope() const
-    {
-        return a_;
-    }
-
-    const float& getSlopeIntercept() const
-    {
-        return b_;
-    }
-private:
-    float a_, b_;
-};
-
-class PieceWiseLinearCurve
-{
-public:
-
-    void addCurvePiece(const float& slope, const float& slopeIntercept)
-    {
-        curvePieces_.push_back(LinearCurvePiece(slope, slopeIntercept));
-    }
-
-    const std::vector<LinearCurvePiece>& getCurvePieces() const
-    {
-        return curvePieces_;
-    }
-
-private:
-    std::vector<LinearCurvePiece> curvePieces_;
-};
-
-class Utility
-{
-public:
-    void setCurve(const PieceWiseLinearCurve& curve)
-    {
-        curve_ = curve;
-    }
-
-    const PieceWiseLinearCurve& getCurve() const
-    {
-        return curve_;
-    }
-private:
+#include "Utility.h"
 
 
-    PieceWiseLinearCurve curve_;
-};
 
 class Commodity
 {
@@ -76,44 +20,65 @@ int _tmain(int argc, _TCHAR* argv[])
 {
     std::map<std::shared_ptr<Commodity>, std::map<std::shared_ptr<Utility>, float>> commodities;
     std::map<std::shared_ptr<Commodity>, float> prices;
+    std::map<std::shared_ptr<Commodity>, float> amounts;
 
     std::shared_ptr<Commodity> x1 = std::make_shared<Commodity>();
     std::shared_ptr<Commodity> x2 = std::make_shared<Commodity>();
+    std::shared_ptr<Commodity> x3 = std::make_shared<Commodity>();
 
-    std::shared_ptr<Utility> stuff = std::make_shared<Utility>();
-    PieceWiseLinearCurve stuffCurve;
-    stuffCurve.addCurvePiece(2, 0);
-    stuffCurve.addCurvePiece(1, 2);
-    stuffCurve.addCurvePiece(0.1f, 4.5f);
-    stuff->setCurve(stuffCurve);
+    std::shared_ptr<Utility> food = std::make_shared<Utility>();
+    Utility::PieceWiseLinearCurve foodCurve;
+    foodCurve.addCurvePiece(2, 0);
+    foodCurve.addCurvePiece(1, 2);
+    foodCurve.addCurvePiece(0.1f, 4.5f);
+    food->setCurve(foodCurve);
+
+    std::shared_ptr<Utility> drink = std::make_shared<Utility>();
+    Utility::PieceWiseLinearCurve drinkCurve;
+    drinkCurve.addCurvePiece(2, 0);
+    drinkCurve.addCurvePiece(0.1f, 4.5f);
+    drink->setCurve(drinkCurve);
 
     std::shared_ptr<Utility> savings = std::make_shared<Utility>();
-    PieceWiseLinearCurve savingsCurve;
+    Utility::PieceWiseLinearCurve savingsCurve;
     savingsCurve.addCurvePiece(0.3f, 0);
-    savingsCurve.addCurvePiece(0.0, 2);
+    savingsCurve.addCurvePiece(0.01f, 2);
     savings->setCurve(savingsCurve);
 
-    commodities[x1][stuff] = 1.0;
-    commodities[x1][savings] = 0.0;
-    prices[x1] = 1.0;
+    commodities[x1][food] = 1.0f;
+    commodities[x1][savings] = 0.0f;
+    commodities[x1][drink] = 0.1f;
+    prices[x1] = 1.0f;
+    amounts[x1] = 3.0f;
 
-    commodities[x2][stuff] = 0.0;
-    commodities[x2][savings] = 1.0;
-    prices[x2] = 1.0;
+    commodities[x2][food] = 0.1f;
+    commodities[x2][savings] = 0.0f;
+    commodities[x2][drink] = 1.0f;
+    prices[x2] = 1.0f;
+    amounts[x2] = 3.0f;
+
+    commodities[x3][food] = 0.0f;
+    commodities[x3][savings] = 1.0f;
+    commodities[x3][drink] = 0.0f;
+    prices[x3] = 1.0f;
 
     std::vector<std::shared_ptr<Utility>> utilities;
-    utilities.push_back(stuff);
+    utilities.push_back(food);
+    utilities.push_back(drink);
     utilities.push_back(savings);
 
-    float money = 10;
+    float money = 80;
 
-    size_t rowCount = 2; // cost row + spending constraint row
+
+    size_t curvePieceCount = 0;
     for (auto& utility : utilities)
     {
-        rowCount += utility->getCurve().getCurvePieces().size();
+        curvePieceCount += utility->getCurve().getCurvePieces().size();
     }
 
-    //                commodities        utilities          constraints - costrow + rhs
+    size_t rowCount = 2 + amounts.size() + curvePieceCount; // 2= cost row + spending constraint row
+
+    //                commodities          utilities          constraints - costrow + rhs
     size_t colCount = commodities.size() + utilities.size() + rowCount - 1 + 1;
 
     std::vector<float> tableauData;
@@ -139,16 +104,16 @@ int _tmain(int argc, _TCHAR* argv[])
     size_t colIndex = 0;
     for (auto& commodity : commodities)
     {
-        tableauData[(rowCount - 1)*colCount + colIndex] = prices.find(commodity.first)->second;
-        tableauData[(rowCount - 1)*colCount + colCount - 1] = money;
-        tableauData[(rowCount - 1)*colCount + colCount - 2] = 1;
+        tableauData[(curvePieceCount + 1)*colCount + colIndex] = prices.find(commodity.first)->second;
+        tableauData[(curvePieceCount + 1)*colCount + colCount - 1] = money;
+        tableauData[(curvePieceCount + 1)*colCount + commodities.size() + utilities.size() + curvePieceCount] = 1;
         size_t rowIndex = 1; // row 0 is cost function
         size_t utilityCount = 0;
         size_t pieceCount = 0;
         for (auto& utility : commodity.second)
         {
             float factor = utility.second;
-            const PieceWiseLinearCurve& curve = utility.first->getCurve();
+            const Utility::PieceWiseLinearCurve& curve = utility.first->getCurve();
 
             for (auto& piece : curve.getCurvePieces())
             {
@@ -165,25 +130,46 @@ int _tmain(int argc, _TCHAR* argv[])
         colIndex++;
     }
 
+    size_t amountConstraintCount = 0;
+    size_t rowindex = curvePieceCount + 1 + 1; // plus 1 for cost function and plus 1 for money constraint
+    colIndex = 0;
+    for (auto& commodity : commodities)
+    {
+        const auto& amount = amounts.find(commodity.first);
+
+        if (amount != amounts.end())
+        {
+            tableauData[(rowindex)* colCount + colIndex] = 1;
+            tableauData[(rowindex)*colCount + commodities.size() + utilities.size() + curvePieceCount + colIndex + 1] = 1;
+            tableauData[(rowindex)*colCount + colCount - 1] = amount->second;
+            rowindex++;
+            colIndex++;
+        }
+    }
+
     SimplexTableau<float> m(rowCount, colCount);
 
-    m.setTableau(tableauData);
-    m.printTableau();
-
-    float res;
-    std::vector<float> var;
-
-    m.Solve(res, var);
-
-    m.printTableau();
-
-    std::cout << "Result: " << res << std::endl;
-
-    int i = 0;
-    for (auto& v : var)
+    for (int repeat = 0; repeat < 1; repeat++)
     {
-        std::cout << "basic " << i << " = " << v << std::endl;
-        i++;
+        m.setTableau(tableauData);
+
+        m.printTableau();
+
+        float res;
+        std::vector<float> var;
+
+        m.Solve(res, var);
+
+        //m.printTableau();
+
+        std::cout << "Result: " << res << std::endl;
+
+        int i = 0;
+        for (auto& v : var)
+        {
+            std::cout << "basic " << i << " = " << v << std::endl;
+            i++;
+        }
     }
 
     std::cout << std::endl;
