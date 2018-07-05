@@ -1,0 +1,51 @@
+<utilities>
+	<utility>
+    <id>food</id>
+		<name>Food</name>
+    <description>Food is yummy and you willl die if you don't have it!.</description>
+    <curve>
+      <piece>
+        <slope>2</slope>
+        <intercept>0</intercept>
+      </piece>
+      <piece>
+        <slope>1</slope>
+        <intercept>2</intercept>
+      </piece>
+      <piece>
+        <slope>0.1</slope>
+        <intercept>4.5</intercept>
+      </piece>
+    </curve>
+	</utility>
+  <utility>
+    <id>drink</id>
+    <name>Drink</name>
+    <description>Cheers!</description>
+    <curve>
+      <piece>
+        <slope>2</slope>
+        <intercept>0</intercept>
+      </piece>
+      <piece>
+        <slope>0.1</slope>
+        <intercept>4.5</intercept>
+      </piece>
+    </curve>
+  </utility>
+  <utility>
+    <id>savings</id>
+    <name>Savings</name>
+    <description>are very sensible...</description>
+    <curve>
+      <piece>
+        <slope>0.3</slope>
+        <intercept>0</intercept>
+      </piece>
+      <piece>
+        <slope>0.01</slope>
+        <intercept>2</intercept>
+      </piece>
+    </curve>
+  </utility>
+</utilities>

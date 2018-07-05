@@ -1,0 +1,43 @@
+<commodities>
+  <commodity>
+    <id>meal</id>
+    <name>Meal</name>
+    <description>Slightly overcooked</description>
+    <utilities>
+      <utility>
+        <id>food</id>
+        <amount>1.0</amount>
+      </utility>
+      <utility>
+        <id>drink</id>
+        <amount>0.1</amount>
+      </utility>
+    </utilities>
+  </commodity>
+  <commodity>
+    <id>drink</id>
+    <name>Beer</name>
+    <description>Delicious</description>
+    <utilities>
+      <utility>
+        <id>food</id>
+        <amount>0.1</amount>
+      </utility>
+      <utility>
+        <id>drink</id>
+        <amount>1.0</amount>
+      </utility>
+    </utilities>
+  </commodity>
+  <commodity>
+    <id>savings</id>
+    <name>Savings</name>
+    <description>yuck</description>
+    <utilities>
+      <utility>
+        <id>savings</id>
+        <amount>1.0</amount>
+      </utility>
+    </utilities>
+  </commodity>
+</commodities>

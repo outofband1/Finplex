@@ -37,3 +37,6 @@
 *.tlog
 *.idb
 *.sdf
+*.psess
+*.vspx
+*.vsp
