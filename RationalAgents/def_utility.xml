@@ -39,13 +39,39 @@
     <description>are very sensible...</description>
     <curve>
       <piece>
-        <slope>0.3</slope>
+        <slope>0.2</slope>
         <intercept>0</intercept>
-      </piece>
-      <piece>
-        <slope>0.01</slope>
-        <intercept>2</intercept>
       </piece>
     </curve>
   </utility>
+  <utility>
+    <id>leisure</id>
+    <name>Leisure time</name>
+    <description>Ahhh</description>
+    <curve>
+      <piece>
+        <slope>0.2</slope>
+        <intercept>0</intercept>
+      </piece>
+    </curve>
+  </utility>
+  <utility>
+    <id>sleep</id>
+    <name>Sleep</name>
+    <description>Zzzzzz</description>
+      <curve>
+        <piece>
+          <slope>2.0</slope>
+          <intercept>-6</intercept>
+        </piece>
+        <piece>
+          <slope>0.2</slope>
+          <intercept>4.8</intercept>
+        </piece>
+        <piece>
+          <slope>0.0</slope>
+          <intercept>8</intercept>
+        </piece>
+      </curve>
+    </utility>
 </utilities>

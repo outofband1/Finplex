@@ -15,7 +15,7 @@
     </utilities>
   </commodity>
   <commodity>
-    <id>drink</id>
+    <id>beer</id>
     <name>Beer</name>
     <description>Delicious</description>
     <utilities>
@@ -29,6 +29,23 @@
       </utility>
     </utilities>
   </commodity>
+  
+  <commodity>
+    <id>work</id>
+    <name>Work</name>
+    <description>eww</description>
+  </commodity>
+  <commodity>
+    <id>leisure</id>
+    <name>Leisure time</name>
+    <description>aahh</description>
+    <utilities>
+      <utility>
+        <id>leisure</id>
+        <amount>1.0</amount>
+      </utility>
+    </utilities>
+  </commodity>
   <commodity>
     <id>savings</id>
     <name>Savings</name>
@@ -36,6 +53,17 @@
     <utilities>
       <utility>
         <id>savings</id>
+        <amount>1.0</amount>
+      </utility>
+    </utilities>
+  </commodity>
+  <commodity>
+    <id>sleep</id>
+    <name>Sleep</name>
+    <description>zzZZzz</description>
+    <utilities>
+      <utility>
+        <id>sleep</id>
         <amount>1.0</amount>
       </utility>
     </utilities>

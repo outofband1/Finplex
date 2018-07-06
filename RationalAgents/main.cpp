@@ -12,49 +12,47 @@
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	DefinitionStorage defStore;
-	defStore.readDefinitions();
+    DefinitionStorage defStore;
+    defStore.readDefinitions();
 
-    float money = 80;
+    float money = 0;
 
     PurchaseSolver solver;
 
-	int count = 0;
-	for (auto& commodity : defStore.getCommodityDefinitions())
-	{
-		solver.registerCommodity(commodity.second);
-		switch (count)
-		{
-		case 0:
-			solver.setPriceAndAmount(commodity.second, 1.1f, 3.0f);
-			break;
-		case 1:
-			solver.setPriceAndAmount(commodity.second, 1.2f, 4.0f);
-			break;
-		case 2:
-			solver.setPriceAndAmount(commodity.second, 1.3f, -1.0f);
-			break;
-		}
 
-		count++;
-	}
-    
-	for (auto& utility : defStore.getUtilityDefinitions())
-	{
-		solver.registerUtility(utility.second);
-	}
-    
-	std::map<std::shared_ptr<Commodity>, float> purchases;
+    for (auto& commodity : defStore.getCommodityDefinitions())
+    {
+        solver.registerCommodity(commodity.second);
+    }
 
-	
-	solver.OptimizeTimeAndPurchases(money, purchases);
-	
-	
+    for (auto& utility : defStore.getUtilityDefinitions())
+    {
+        solver.registerUtility(utility.second);
+    }
 
-	for (auto& purchase : purchases)
-	{
-		std::cout << purchase.first->getName() << ": " << purchase.second << std::endl;
-	}
+    solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("meal")->second, 1.1f, 3.0f);
+
+    solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("beer")->second, 1.2f, 4.0f);
+
+    solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("savings")->second, 1.0f, -1.0);
+
+    solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("work")->second, -1.0f, 12.0f);
+
+    solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("leisure")->second, 1.0f, -1.0f);
+
+    solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("sleep")->second, 1.0f, -1.0f);
+
+    std::map<std::shared_ptr<Commodity>, float> purchases;
+
+    for (int i = 0; i < 1; i++)
+    {
+        solver.OptimizeTimeAndPurchases(money, purchases);
+    }
+
+    for (auto& purchase : purchases)
+    {
+        std::cout << purchase.first->getName() << ": " << purchase.second << std::endl;
+    }
 
     std::cout << std::endl;
     system("pause");

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <set>
 
 template <typename TYPE>
 class SimplexSolver
@@ -15,7 +16,7 @@ public:
         entries_.resize(rowCount_ * colCount_);
     }
 
-    void setTableau(const std::vector<float>& values)
+    void setTableau(const std::vector<TYPE>& values)
     {
         entries_ = values;
     }
@@ -34,7 +35,7 @@ public:
 
     void printBasicVariables()
     {
-        std::cout.precision(2);
+        std::cout.precision(4);
         std::cout << std::fixed << std::showpos;
         std::cout << std::endl;
 
@@ -72,10 +73,10 @@ public:
         std::cout << std::endl;
     }
 
-    void Solve(TYPE& max, std::vector<float>& variables)
+    void Solve(TYPE& max, std::vector<TYPE>& variables)
     {
-		basic_.reserve(rowCount_);
-		nonbasic_.reserve(rowCount_);
+        basic_.reserve(rowCount_);
+        nonbasic_.reserve(rowCount_);
         bool done = false;
         while (!done)
         {
@@ -100,32 +101,69 @@ public:
             pivot(pivotRow, enteringColumnIndex);
         }
 
-        //print();
-
         findBasicVariables();
 
-        bool alternateSolutionFound = false;
-        for (const Variabel& v : nonbasic_)
+
+
+        variables.reserve(basic_.size() + nonbasic_.size());
+        for (size_t i = 0; i < basic_.size() + nonbasic_.size(); i++)
         {
-            if (abs(getEntry(0, v.col)) < 10E-6) // if an alternate solution exist we will have a nonbasic var with cost = 0
-            {
-                size_t pivotRow = findPivotRowIndex(v.col);
-                pivot(pivotRow, v.col);
-                alternateSolutionFound = true;
-            }
-        }
-        if (alternateSolutionFound)
-        {
-            findBasicVariables();
+            variables.push_back(0);
         }
 
-        max = getEntry(0, colCount_ - 1);
+        bool alt = true;
+        std::set<size_t> alreadyPivoted;
+        for (Variabel& var : basic_)
+        {
+            alreadyPivoted.insert(var.col);
+        }
 
         for (size_t basicIndex = 0; basicIndex < basic_.size(); basicIndex++)
         {
             TYPE val = getEntry(basic_[basicIndex].row, colCount_ - 1);
-            variables.push_back(val);
+            variables[basic_[basicIndex].col] += val;
         }
+
+        int altSolutionsFound = 0;
+        while (alt)
+        {
+            alt = false;
+            for (const Variabel& v : nonbasic_)
+            {
+                if (alreadyPivoted.find(v.col) == alreadyPivoted.end() && abs(getEntry(0, v.col)) < 10E-6)// 10E-6???!? // if an alternate solution exist we will have a nonbasic var with cost = 0
+                {
+                    size_t pivotRow = findPivotRowIndex(v.col);
+                    pivot(pivotRow, v.col);
+                    alreadyPivoted.insert(v.col);
+                    alt = true;
+                    break;
+                }
+            }
+
+            if (alt)
+            {
+                findBasicVariables();
+
+                altSolutionsFound++;
+                for (size_t basicIndex = 0; basicIndex < basic_.size(); basicIndex++)
+                {
+                    TYPE val = getEntry(basic_[basicIndex].row, colCount_ - 1);
+                    variables[basic_[basicIndex].col] += val;
+                }
+            }
+
+        }
+
+
+        max = getEntry(0, colCount_ - 1);
+
+        for (size_t var = 0; var < variables.size(); var++)
+        {
+            variables[var] /= altSolutionsFound + 1;
+        }
+
+
+
     }
 
 private:
@@ -148,6 +186,7 @@ private:
     {
         for (size_t i = 0; i < colCount_; i++)
         {
+
             if (getEntry(0, i) < 0)
             {
                 return i;
@@ -213,7 +252,7 @@ private:
             int oneFound = 0;
             int otherFound = 0;
             size_t pivotRow = -1;
-            for (size_t row = 1; row < rowCount_; row++)
+            for (size_t row = 0; row < rowCount_; row++)
             {
                 const TYPE& val = getEntry(row, col);
                 if (val == 1)
@@ -224,7 +263,7 @@ private:
                 else if (val != 0)
                 {
                     otherFound++;
-                    continue;
+                    break;;
                 }
             }
 

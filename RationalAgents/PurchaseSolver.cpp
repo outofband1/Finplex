@@ -56,7 +56,7 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const float& money, std::map<std::
     //                commodities      utilities      constraints - costrow + rhs
     size_t colCount = commodityCount + utilityCount + rowCount - 1 + 1;
 
-    std::vector<float> tableauData;
+    std::vector<double> tableauData;
     tableauData.resize(colCount * rowCount);
 
     // setup cost row
@@ -76,9 +76,12 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const float& money, std::map<std::
         }
     }
 
+    std::map<size_t, std::shared_ptr<Commodity>> commodityCol;
+
     size_t colIndex = 0;
     for (auto& commodity : commodities_)
     {
+        commodityCol[colIndex] = commodity;
         tableauData[(curvePieceCount + 1)*colCount + colIndex] = amountsAndPrices_.find(commodity)->second.price_;
         tableauData[(curvePieceCount + 1)*colCount + colCount - 1] = money;
         tableauData[(curvePieceCount + 1)*colCount + commodityCount + utilityCount + curvePieceCount] = 1;
@@ -113,35 +116,37 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const float& money, std::map<std::
 
     size_t amountConstraintCount = 0;
     size_t rowindex = curvePieceCount + 1 + 1; // plus 1 for cost function and plus 1 for money constraint
-    colIndex = 0;
+    size_t colIndexCommodity = 0;
+    size_t colIndexConstraint = 0;
     for (auto& commodity : commodities_)
     {
         const auto& amount = amountsAndPrices_.find(commodity)->second.amount_;
 
         if (amount >= 0)
         {
-            tableauData[(rowindex)* colCount + colIndex] = 1;
-            tableauData[(rowindex)*colCount + commodityCount + utilityCount + curvePieceCount + colIndex + 1] = 1;
+            tableauData[(rowindex)* colCount + colIndexCommodity] = 1;
+            tableauData[(rowindex)*colCount + commodityCount + utilityCount + curvePieceCount + colIndexConstraint + 1] = 1;
             tableauData[(rowindex)*colCount + colCount - 1] = amount;
             rowindex++;
+            colIndexConstraint++;
         }
-        colIndex++;
+        colIndexCommodity++;
     }
 
-    SimplexSolver<float> m(rowCount, colCount);
+    SimplexSolver<double> m(rowCount, colCount);
 
     m.setTableau(tableauData);
 
-    float maxedUtility;
-    std::vector<float> basicVariablesValues;
+    double maxedUtility;
+    std::vector<double> basicVariablesValues;
 
-	m.Solve(maxedUtility, basicVariablesValues);
+    m.Solve(maxedUtility, basicVariablesValues);
 
-	purchases.clear();
-	size_t varIndex = 0;
-	for (auto& com : commodities_)
-	{
-		purchases[com] = basicVariablesValues[varIndex];
-		varIndex++;
-	}
+    purchases.clear();
+    size_t varIndex = 0;
+    for (auto& comCol : commodityCol)
+    {
+        purchases[comCol.second] = basicVariablesValues[comCol.first];
+
+    }
 }
