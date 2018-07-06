@@ -1,0 +1,29 @@
+<activities>
+  <activity>
+    <id>labor</id>
+    <name>Labor</name>
+    <description>eww</description>
+  </activity>
+  <activity>
+    <id>sleep</id>
+    <name>Sleep</name>
+    <description>zzZZzz</description>
+    <utilities>
+      <utility>
+        <id>sleep</id>
+        <amount>1.0</amount>
+      </utility>
+    </utilities>
+  </activity>
+  <activity>
+    <id>leisure</id>
+    <name>Leisure</name>
+    <description>Relaxation and stuff</description>
+    <utilities>
+      <utility>
+        <id>leisure</id>
+        <amount>1.0</amount>
+      </utility>
+    </utilities>
+  </activity>
+</activities>

@@ -7,6 +7,7 @@
 
 #include "Utility.h"
 #include "Commodity.h"
+#include "Activity.h"
 #include "PurchaseSolver.h"
 #include "DefinitionStorage.h"
 
@@ -22,8 +23,13 @@ int _tmain(int argc, _TCHAR* argv[])
 
     for (auto& commodity : defStore.getCommodityDefinitions())
     {
-        solver.registerCommodity(commodity.second);
+		solver.registerUtilitySource(commodity.second);
     }
+
+	for (auto& activity : defStore.getActivityDefinitions())
+	{
+		solver.registerUtilitySource(activity.second);
+	}
 
     for (auto& utility : defStore.getUtilityDefinitions())
     {
@@ -36,13 +42,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
     solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("savings")->second, 1.0f, -1.0);
 
-    solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("work")->second, -1.0f, 12.0f);
-
-    solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("leisure")->second, 1.0f, -1.0f);
-
-    solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("sleep")->second, 1.0f, -1.0f);
-
-    std::map<std::shared_ptr<Commodity>, float> purchases;
+    std::map<std::shared_ptr<UtilitySource>, float> purchases;
 
     for (int i = 0; i < 1; i++)
     {

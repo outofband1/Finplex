@@ -65,12 +65,12 @@
           <intercept>-6</intercept>
         </piece>
         <piece>
-          <slope>0.2</slope>
-          <intercept>4.8</intercept>
+          <slope>0.5</slope>
+          <intercept>3</intercept>
         </piece>
         <piece>
           <slope>0.0</slope>
-          <intercept>8</intercept>
+          <intercept>7</intercept>
         </piece>
       </curve>
     </utility>

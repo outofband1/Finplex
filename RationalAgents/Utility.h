@@ -1,7 +1,9 @@
 #pragma once
 #include <vector>
 
-class Utility
+#include "Definition.h"
+
+class Utility : public Definition
 {
 public:
     class LinearCurvePiece
@@ -23,16 +25,10 @@ public:
         std::vector<LinearCurvePiece> curvePieces_;
     };
 
-    Utility(const std::string name, const PieceWiseLinearCurve& curve);
-
-    void setDescription(const std::string description);
+    Utility(const std::string& name, const PieceWiseLinearCurve& curve);
 
     const PieceWiseLinearCurve& getCurve() const;
-    const std::string& getName() const;
-    const std::string& getDescription() const;
-private:
-    std::string name_;
-    std::string description_;
 
+private:
     PieceWiseLinearCurve curve_;
 };

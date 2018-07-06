@@ -146,25 +146,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
+    <ClCompile Include="Activity.cpp" />
     <ClCompile Include="Commodity.cpp" />
+    <ClCompile Include="Definition.cpp" />
     <ClCompile Include="DefinitionStorage.cpp" />
     <ClCompile Include="PurchaseSolver.cpp" />
     <ClCompile Include="tinyxml2.cpp" />
     <ClCompile Include="Utility.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="UtilitySource.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Activity.h" />
     <ClInclude Include="Commodity.h" />
+    <ClInclude Include="Definition.h" />
     <ClInclude Include="DefinitionStorage.h" />
     <ClInclude Include="PurchaseSolver.h" />
     <ClInclude Include="Simplex.h" />
     <ClInclude Include="tinyxml2.h" />
     <ClInclude Include="Utility.h" />
+    <ClInclude Include="UtilitySource.h" />
   </ItemGroup>
   <ItemGroup>
+    <Xml Include="def_activity.xml" />
     <Xml Include="def_commodity.xml" />
     <Xml Include="def_utility.xml" />
   </ItemGroup>

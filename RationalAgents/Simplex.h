@@ -153,13 +153,12 @@ public:
             }
 
         }
-
-
-        max = getEntry(0, colCount_ - 1);
+		
+		max = getEntry(0, colCount_ - 1);
 
         for (size_t var = 0; var < variables.size(); var++)
         {
-            variables[var] /= altSolutionsFound + 1;
+          variables[var] /= altSolutionsFound + 1;
         }
 
 
