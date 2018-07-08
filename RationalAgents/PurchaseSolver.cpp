@@ -3,8 +3,10 @@
 #include "Utility.h"
 #include <memory>
 
+#include "Simplex.h"
 #include "Commodity.h"
 #include "Activity.h"
+#include "Inventory.h"
 
 PurchaseSolver::PurchaseSolver()
 {
@@ -26,12 +28,12 @@ void PurchaseSolver::registerUtility(const std::shared_ptr<Utility>& utility)
     utilities_.push_back(utility);
 }
 
-void PurchaseSolver::setPriceAndAmount(const std::shared_ptr<Commodity>& commodity, const float& price, const float& amount)
+void PurchaseSolver::setPriceAndAmount(const std::shared_ptr<UtilitySource>& utilitySource, const float& price, const float& amount)
 {
     PriceAndAmount pa;
     pa.amount_ = amount;
     pa.price_ = price;
-	amountsAndPrices_[commodity] = pa;
+	amountsAndPrices_[utilitySource] = pa;
 }
 
 void PurchaseSolver::clearAmountsAndPrices()
@@ -39,7 +41,7 @@ void PurchaseSolver::clearAmountsAndPrices()
     amountsAndPrices_.clear();
 }
 
-void PurchaseSolver::OptimizeTimeAndPurchases(const float& money, std::map<std::shared_ptr<UtilitySource>, float>& purchases) const
+void PurchaseSolver::OptimizeTimeAndPurchases(const float& time, const float& savings, const Inventory& inventory, std::map<std::shared_ptr<Commodity>, float>& commodityPurchases, std::map<std::shared_ptr<Activity>, float>& activityPurchases) const
 {
 
     size_t curvePieceCount = 0;
@@ -84,14 +86,37 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const float& money, std::map<std::
         }
     }
 
-	std::map<size_t, std::shared_ptr<UtilitySource>> utilitySourceCol;
+	std::map<size_t, std::shared_ptr<Commodity>> commodityCol;
+	std::map<size_t, std::shared_ptr<Activity>> activityCol;
+
+	size_t rowIndex = 1; // row 0 is cost function
+	size_t utilityIndex = 0;
+	size_t pieceCount = 0;
+	for (auto& utility : utilities_)
+	{	
+		const Utility::PieceWiseLinearCurve& curve = utility->getCurve();
+
+		for (auto& piece : curve.getCurvePieces())
+		{
+			tableauData[rowIndex * colCount + colCount - 1] = piece.getSlopeIntercept();
+			tableauData[rowIndex * colCount + utilitySourceCount + utilityIndex] = 1.0;
+			pieceCount++;
+			rowIndex++;
+		}
+		utilityIndex++;
+	}
 
     size_t colIndex = 0;
     for (auto& commodity : commodities_)
     {
-		utilitySourceCol[colIndex] = commodity;
-		tableauData[(curvePieceCount + 1)*colCount + colIndex] = amountsAndPrices_.find(commodity)->second.price_;
-        tableauData[(curvePieceCount + 1)*colCount + colCount - 1] = 0;
+		commodityCol[colIndex] = commodity;
+		auto& amountAndprice = amountsAndPrices_.find(commodity);
+		if (amountAndprice != amountsAndPrices_.end())
+		{
+			tableauData[(curvePieceCount + 1)*colCount + colIndex] = amountsAndPrices_.find(commodity)->second.price_;
+		}
+		
+        tableauData[(curvePieceCount + 1)*colCount + colCount - 1] = savings;
         tableauData[(curvePieceCount + 1)*colCount + utilitySourceCount + utilityCount + curvePieceCount] = 1;
         size_t rowIndex = 1; // row 0 is cost function
         size_t utilityIndex = 0;
@@ -107,11 +132,12 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const float& money, std::map<std::
 
             const Utility::PieceWiseLinearCurve& curve = utility->getCurve();
 
+			float currentAmount = inventory.getAmount(commodity);
+
             for (auto& piece : curve.getCurvePieces())
             {
                 tableauData[rowIndex * colCount + colIndex] = -factor * piece.getSlope();
-                tableauData[rowIndex * colCount + colCount - 1] = piece.getSlopeIntercept();
-                tableauData[rowIndex * colCount + utilitySourceCount + utilityIndex] = 1.0;
+				tableauData[rowIndex * colCount + colCount - 1] += piece.getSlope()*currentAmount*factor;
                 pieceCount++;
                 rowIndex++;
             }
@@ -123,13 +149,16 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const float& money, std::map<std::
 
 	for (auto& activity : activities_)
 	{
-		utilitySourceCol[colIndex] = activity;
-		tableauData[(curvePieceCount + 2)*colCount + colIndex] = 1;
-		tableauData[(curvePieceCount + 2)*colCount + colCount - 1] = 24;
-		tableauData[(curvePieceCount + 2)*colCount + utilitySourceCount + utilityCount + curvePieceCount] = 1;
+		activityCol[colIndex] = activity;
 
-		if (activity->getName() == "Labor")
-		tableauData[(curvePieceCount + 1)*colCount + colIndex] = -1;
+		auto& amountAndprice = amountsAndPrices_.find(activity);
+		if (amountAndprice != amountsAndPrices_.end())
+		{
+			tableauData[(curvePieceCount + 1)*colCount + colIndex] = amountsAndPrices_.find(activity)->second.price_;
+		}
+		tableauData[(curvePieceCount + 2)*colCount + colIndex] = 1;
+		tableauData[(curvePieceCount + 2)*colCount + colCount - 1] = time;
+		tableauData[(curvePieceCount + 2)*colCount + utilitySourceCount + utilityCount + curvePieceCount] = 1;
 		
 
 		size_t rowIndex = 1; // row 0 is cost function
@@ -149,7 +178,6 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const float& money, std::map<std::
 			for (auto& piece : curve.getCurvePieces())
 			{
 				tableauData[rowIndex * colCount + colIndex] = -factor * piece.getSlope();
-				tableauData[rowIndex * colCount + colCount - 1] = piece.getSlopeIntercept();
 				pieceCount++;
 				rowIndex++;
 			}
@@ -159,7 +187,7 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const float& money, std::map<std::
 		colIndex++;
 	}
 
-	size_t rowIndex = 1; // row 0 is cost function
+	rowIndex = 1; // row 0 is cost function
 	for (size_t col = utilitySourceCount + utilityCount; col < colCount-1; col++)
 	{
 		tableauData[rowIndex * colCount + col] = 1.0;
@@ -172,32 +200,54 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const float& money, std::map<std::
     size_t colIndexConstraint = 0;
 	for (auto& commodity : commodities_)
     {
-		const auto& amount = amountsAndPrices_.find(commodity)->second.amount_;
+		const auto& amountAndPrice = amountsAndPrices_.find(commodity);
 
-        if (amount >= 0)
-        {
+		if (amountAndPrice != amountsAndPrices_.end() && amountAndPrice->second.amount_ >= 0)
+		{
             tableauData[(rowindex)* colCount + colIndexutilitySource] = 1;
-            tableauData[(rowindex)*colCount + colCount - 1] = amount;
+			tableauData[(rowindex)*colCount + colCount - 1] = amountAndPrice->second.amount_;
             rowindex++;
             colIndexConstraint++;
         }
         colIndexutilitySource++;
     }
+	for (auto& activity : activities_)
+	{
+		const auto& amountAndPrice = amountsAndPrices_.find(activity);
+
+		if (amountAndPrice != amountsAndPrices_.end() && amountAndPrice->second.amount_ >= 0)
+		{
+			tableauData[(rowindex)* colCount + colIndexutilitySource] = 1;
+			tableauData[(rowindex)*colCount + colCount - 1] = amountAndPrice->second.amount_;
+			rowindex++;
+			colIndexConstraint++;
+		}
+		colIndexutilitySource++;
+	}
 
     SimplexSolver<double> m(rowCount, colCount);
 
     m.setTableau(tableauData);
+
+	//m.printTableau();
 
     double maxedUtility;
     std::vector<double> basicVariablesValues;
 
     m.Solve(maxedUtility, basicVariablesValues);
 
-    purchases.clear();
+    commodityPurchases.clear();
     size_t varIndex = 0;
-    for (auto& comCol : utilitySourceCol)
+    for (auto& comCol : commodityCol)
     {
-        purchases[comCol.second] = basicVariablesValues[comCol.first];
+		commodityPurchases[comCol.second] = basicVariablesValues[comCol.first];
 
     }
+
+	activityPurchases.clear();
+	for (auto& actCol : activityCol)
+	{
+		activityPurchases[actCol.second] = basicVariablesValues[actCol.first];
+
+	}
 }

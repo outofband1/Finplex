@@ -1,10 +1,5 @@
 <activities>
   <activity>
-    <id>labor</id>
-    <name>Labor</name>
-    <description>eww</description>
-  </activity>
-  <activity>
     <id>sleep</id>
     <name>Sleep</name>
     <description>zzZZzz</description>
@@ -25,5 +20,26 @@
         <amount>1.0</amount>
       </utility>
     </utilities>
+  </activity>
+  <activity>
+    <id>relaxation</id>
+    <name>Relaxation</name>
+    <description>For the slightly less dumb</description>
+    <utilities>
+      <utility>
+        <id>leisure</id>
+        <amount>0.01</amount>
+      </utility>
+    </utilities>
+  </activity>
+  <activity>
+    <id>unskilled labor</id>
+    <name>Unskilled labor</name>
+    <description>For complete idiots</description>
+  </activity>
+  <activity>
+    <id>skilled labor</id>
+    <name>Skilled labor</name>
+    <description>For the slightly less dumb</description>
   </activity>
 </activities>

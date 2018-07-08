@@ -254,12 +254,12 @@ private:
             for (size_t row = 0; row < rowCount_; row++)
             {
                 const TYPE& val = getEntry(row, col);
-                if (val == 1)
+                if (abs(val-1) < 10E-6)
                 {
                     oneFound++;
                     pivotRow = row;
                 }
-                else if (val != 0)
+                else if (abs(val) > 10E-6)
                 {
                     otherFound++;
                     break;;
@@ -285,7 +285,8 @@ private:
 
         if (basic_.size() != rowCount_ - 1) // start at 1 and cost row
         {
-            std::cout << "Problem infeasable." << std::endl;
+			std::cout << std::endl << "Problem infeasable." << std::endl << std::endl;
+			//printTableau();
         }
     }
 

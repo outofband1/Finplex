@@ -2,19 +2,19 @@
 	<utility>
     <id>food</id>
 		<name>Food</name>
-    <description>Food is yummy and you willl die if you don't have it!.</description>
+    <description>Food is yummy and you will die if you don't have it!.</description>
     <curve>
       <piece>
-        <slope>2</slope>
+        <slope>3.5</slope>
         <intercept>0</intercept>
       </piece>
       <piece>
         <slope>1</slope>
-        <intercept>2</intercept>
+        <intercept>5</intercept>
       </piece>
       <piece>
-        <slope>0.1</slope>
-        <intercept>4.5</intercept>
+        <slope>0.0</slope>
+        <intercept>8</intercept>
       </piece>
     </curve>
 	</utility>
@@ -24,12 +24,16 @@
     <description>Cheers!</description>
     <curve>
       <piece>
-        <slope>2</slope>
+        <slope>3.5</slope>
         <intercept>0</intercept>
       </piece>
       <piece>
-        <slope>0.1</slope>
-        <intercept>4.5</intercept>
+        <slope>0.4</slope>
+        <intercept>8.5</intercept>
+      </piece>
+      <piece>
+        <slope>0.0</slope>
+        <intercept>10</intercept>
       </piece>
     </curve>
   </utility>
@@ -50,7 +54,7 @@
     <description>Ahhh</description>
     <curve>
       <piece>
-        <slope>0.2</slope>
+        <slope>0.3</slope>
         <intercept>0</intercept>
       </piece>
     </curve>
