@@ -13,7 +13,7 @@
         <intercept>5</intercept>
       </piece>
       <piece>
-        <slope>0.0</slope>
+        <slope>0.1</slope>
         <intercept>8</intercept>
       </piece>
     </curve>

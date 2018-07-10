@@ -57,6 +57,11 @@ public:
         std::cout << std::fixed << std::showpos;
         std::cout << std::endl;
 
+        for (double j = 0; j < colCount_; j++) // column
+        {
+            std::cout << j / 100 << ", ";
+        }
+        std::cout << std::endl;
         for (size_t i = 0; i < rowCount_; i++) // row
         {
             for (size_t j = 0; j < colCount_; j++) // column
@@ -94,17 +99,17 @@ public:
 
             if (pivotRow == -1)
             {
+                printTableau();
                 std::cout << "Problem unbounded" << std::endl;
                 return; // all coefficients negative -> problem unbounded
             }
 
             pivot(pivotRow, enteringColumnIndex);
         }
-
         findBasicVariables();
 
 
-
+        size_t basc = basic_.size();
         variables.reserve(basic_.size() + nonbasic_.size());
         for (size_t i = 0; i < basic_.size() + nonbasic_.size(); i++)
         {
@@ -113,10 +118,10 @@ public:
 
         bool alt = true;
         std::set<size_t> alreadyPivoted;
-        for (Variabel& var : basic_)
+        /*for (Variabel& var : basic_)
         {
             alreadyPivoted.insert(var.col);
-        }
+        }*/
 
         for (size_t basicIndex = 0; basicIndex < basic_.size(); basicIndex++)
         {
@@ -124,13 +129,14 @@ public:
             variables[basic_[basicIndex].col] += val;
         }
 
-        int altSolutionsFound = 0;
+
+        /*int altSolutionsFound = 0;
         while (alt)
         {
             alt = false;
             for (const Variabel& v : nonbasic_)
             {
-                if (alreadyPivoted.find(v.col) == alreadyPivoted.end() && abs(getEntry(0, v.col)) < 10E-6)// 10E-6???!? // if an alternate solution exist we will have a nonbasic var with cost = 0
+                if (alreadyPivoted.find(v.col) == alreadyPivoted.end() && v.row != -1 && abs(getEntry(0, v.col)) == 0)// 10E-6???!? // if an alternate solution exist we will have a nonbasic var with cost = 0
                 {
                     size_t pivotRow = findPivotRowIndex(v.col);
                     pivot(pivotRow, v.col);
@@ -142,6 +148,7 @@ public:
 
             if (alt)
             {
+                printTableau();
                 findBasicVariables();
 
                 altSolutionsFound++;
@@ -153,13 +160,13 @@ public:
             }
 
         }
-		
-		max = getEntry(0, colCount_ - 1);
+
+        max = getEntry(0, colCount_ - 1);
 
         for (size_t var = 0; var < variables.size(); var++)
         {
-          variables[var] /= altSolutionsFound + 1;
-        }
+            variables[var] /= altSolutionsFound + 1;
+        }*/
 
 
 
@@ -183,16 +190,19 @@ private:
     inline
     size_t findEnteringVariableIndex() const
     {
+        TYPE minValue = 0;
+        size_t minPos = -1;
         for (size_t i = 0; i < colCount_; i++)
         {
-
-            if (getEntry(0, i) < 0)
+            TYPE entry = getEntry(0, i);
+            if (entry < minValue)
             {
-                return i;
+                minValue = entry;
+                minPos = i;
             }
         }
 
-        return -1;
+        return minPos;
     }
 
     inline
@@ -254,7 +264,7 @@ private:
             for (size_t row = 0; row < rowCount_; row++)
             {
                 const TYPE& val = getEntry(row, col);
-                if (abs(val-1) < 10E-6)
+                if (abs(val - 1) < 10E-6)
                 {
                     oneFound++;
                     pivotRow = row;
@@ -262,7 +272,6 @@ private:
                 else if (abs(val) > 10E-6)
                 {
                     otherFound++;
-                    break;;
                 }
             }
 
@@ -283,11 +292,11 @@ private:
 
         }
 
-        if (basic_.size() != rowCount_ - 1) // start at 1 and cost row
+        /*if (basic_.size() < rowCount_ - 1) // start at 1 and cost row
         {
-			std::cout << std::endl << "Problem infeasable." << std::endl << std::endl;
-			//printTableau();
-        }
+            std::cout << std::endl << "Problem infeasable." << std::endl << std::endl;
+            printTableau();
+        }*/
     }
 
     inline

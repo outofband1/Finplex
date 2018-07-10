@@ -11,6 +11,7 @@
 #include "PurchaseSolver.h"
 #include "DefinitionStorage.h"
 #include "Inventory.h"
+#include "Producer.h"
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -19,134 +20,65 @@ int _tmain(int argc, _TCHAR* argv[])
 
     PurchaseSolver solver;
 
-
-    for (auto& commodity : defStore.getCommodityDefinitions())
-    {
-		solver.registerUtilitySource(commodity.second);
-    }
-
-	for (auto& activity : defStore.getActivityDefinitions())
-	{
-		solver.registerUtilitySource(activity.second);
-	}
-
     for (auto& utility : defStore.getUtilityDefinitions())
     {
         solver.registerUtility(utility.second);
     }
 
-    solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("meal")->second, 1.0f, 1.0f);
+    //solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("meal")->second, 1.0f, 1.0f);
 
     solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("beer")->second, 0.4f, 40.0f);
 
     solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("savings")->second, 1.0f, -1.0);
 
-	solver.setPriceAndAmount(defStore.getActivityDefinitions().find("leisure")->second, 0.5f, 3.0);
+    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("leisure")->second, 0.5f, 3.0);
 
-	solver.setPriceAndAmount(defStore.getActivityDefinitions().find("unskilled labor")->second, -0.8f, 5.0);
+    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("unskilled labor")->second, -0.8f, 5.0);
 
-	solver.setPriceAndAmount(defStore.getActivityDefinitions().find("skilled labor")->second, -1.1f, 2.0);
+    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("skilled labor")->second, -0.8f, 3.0);
 
-	solver.setPriceAndAmount(defStore.getActivityDefinitions().find("relaxation")->second, 0.0f, -1.0);
+    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("relaxation")->second, 0.0f, -1.0);
 
-    std::map<std::shared_ptr<Commodity>, float> commodityPurchases;
-	std::map<std::shared_ptr<Activity>, float> activityPurchases;
+    std::shared_ptr<Commodity> meal1 = std::make_shared<Commodity>(*(defStore.getCommodityDefinitions().find("meal")->second));
+    meal1->setName("Meal 1");
+    Producer p1(meal1);
 
-	Inventory inventory;
-	float money = 0;
+    std::shared_ptr<Commodity> meal2 = std::make_shared<Commodity>(*(defStore.getCommodityDefinitions().find("meal")->second));
+    meal2->setName("Meal 2");
+    Producer p2(meal2);
 
-	std::cout.precision(10);
+    std::shared_ptr<Commodity> meal3 = std::make_shared<Commodity>(*(defStore.getCommodityDefinitions().find("meal")->second));
+    meal3->setName("Meal 3");
+    Producer p3(meal3);
 
-	inventory.add(defStore.getCommodityDefinitions().find("meal")->second, 0);
+    Inventory inv;
 
-	float produce = 2.5;
-	float produceMax = 10;
-	float price = 1.33;
-	float priceMin = 0.8;
+    std::map<std::shared_ptr<Commodity>, double> commodityPurchases;
+    std::map<std::shared_ptr<Activity>, double> activityPurchases;
 
+    solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("beer")->second, 0.4f, 40.0f);
+    solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("savings")->second, 1.0f, -1.0);
+    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("leisure")->second, 0.5f, 3.0);
+    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("unskilled labor")->second, -0.8, 5.0);
+    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("skilled labor")->second, -0.8f, 3.0);
+    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("relaxation")->second, 0.0f, -1.0);
 
-    for (int i = 0; i < 1; i++)
+    while (true)
     {
-		solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("meal")->second, price, produce);
+        p1.planProduction(solver, 0.0, 0.0);
+        p2.planProduction(solver, 0.0, 0.0);
+        p3.planProduction(solver, 0.0, 0.0);
 
-		std::cout << "Price: " << price << ", Produced: " << produce << std::endl;
+        solver.OptimizeTimeAndPurchases(24, 0.0, inv, commodityPurchases, activityPurchases);
 
-		solver.OptimizeTimeAndPurchases(24, money, inventory, commodityPurchases, activityPurchases);
+        for (auto& purchase : commodityPurchases)
+        {
+            std::cout << purchase.first->getName() << " : " << purchase.second << std::endl;
+        }
 
-		for (auto& commodity : commodityPurchases)
-		{
-			std::cout << commodity.first->getName() << ": " << commodity.second << std::endl;
-
-		}
-
-		for (auto& activity : activityPurchases)
-		{
-			std::cout << activity.first->getName() << ": " << activity.second << std::endl;
-		}
-
-		auto& mealsBought = commodityPurchases.find(defStore.getCommodityDefinitions().find("meal")->second);
-		
-		std::cout << "PROFIT: " << mealsBought->second*price << std::endl;
-
-		system("pause");
+        system("pause");
+        int abe = 6;
     }
-
-	price += 0.01;
-	for (int i = 0; i < 1; i++)
-	{
-		solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("meal")->second, price, produce);
-
-		std::cout << "Price: " << price << ", Produced: " << produce << std::endl;
-
-		solver.OptimizeTimeAndPurchases(24, money, inventory, commodityPurchases, activityPurchases);
-
-		for (auto& commodity : commodityPurchases)
-		{
-			std::cout << commodity.first->getName() << ": " << commodity.second << std::endl;
-
-		}
-
-		for (auto& activity : activityPurchases)
-		{
-			std::cout << activity.first->getName() << ": " << activity.second << std::endl;
-		}
-
-		auto& mealsBought = commodityPurchases.find(defStore.getCommodityDefinitions().find("meal")->second);
-
-		std::cout << "PROFIT: " << mealsBought->second*price << std::endl;
-
-		system("pause");
-	}
-
-	price -= 0.01;
-	produce += 0.01;
-	for (int i = 0; i < 1; i++)
-	{
-		solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("meal")->second, price, produce);
-
-		std::cout << "Price: " << price << ", Produced: " << produce << std::endl;
-
-		solver.OptimizeTimeAndPurchases(24, money, inventory, commodityPurchases, activityPurchases);
-
-		for (auto& commodity : commodityPurchases)
-		{
-			std::cout << commodity.first->getName() << ": " << commodity.second << std::endl;
-
-		}
-
-		for (auto& activity : activityPurchases)
-		{
-			std::cout << activity.first->getName() << ": " << activity.second << std::endl;
-		}
-
-		auto& mealsBought = commodityPurchases.find(defStore.getCommodityDefinitions().find("meal")->second);
-
-		std::cout << "PROFIT: " << mealsBought->second*price << std::endl;
-
-		system("pause");
-	}
-
-
 
     std::cout << std::endl;
     system("pause");

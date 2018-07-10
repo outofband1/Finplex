@@ -10,15 +10,13 @@ class Utility;
 class UtilitySource : public Definition
 {
 public:
-	UtilitySource(const std::string& name);
+    UtilitySource(const std::string& name);
 
-	void addUtility(const std::shared_ptr<Utility>& utility, const float& amount);
+    void addUtility(const std::shared_ptr<Utility>& utility, const double& amount);
 
-	const std::map<std::shared_ptr<Utility>, float>& getUtilities() const;
+    const std::map<std::shared_ptr<Utility>, double>& getUtilities() const;
 
 private:
-	std::string name_;
-	std::string description_;
 
-	std::map<std::shared_ptr<Utility>, float> utilities_;
+    std::map<std::shared_ptr<Utility>, double> utilities_;
 };

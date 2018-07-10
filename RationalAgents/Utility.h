@@ -9,17 +9,17 @@ public:
     class LinearCurvePiece
     {
     public:
-        LinearCurvePiece(const float& slope, const float& intercept);
-        const float& getSlope() const;
-        const float& getSlopeIntercept() const;
+        LinearCurvePiece(const double& slope, const double& intercept);
+        const double& getSlope() const;
+        const double& getSlopeIntercept() const;
     private:
-        float slope_, intercept_;
+        double slope_, intercept_;
     };
 
     class PieceWiseLinearCurve
     {
     public:
-        void addCurvePiece(const float& slope, const float& intercept);
+        void addCurvePiece(const double& slope, const double& intercept);
         const std::vector<LinearCurvePiece>& getCurvePieces() const;
     private:
         std::vector<LinearCurvePiece> curvePieces_;

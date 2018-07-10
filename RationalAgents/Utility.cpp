@@ -1,21 +1,21 @@
 #include "Utility.h"
 
-Utility::LinearCurvePiece::LinearCurvePiece(const float& slope, const float& intercept) :
+Utility::LinearCurvePiece::LinearCurvePiece(const double& slope, const double& intercept) :
     slope_(slope),
     intercept_(intercept)
 {}
 
-const float& Utility::LinearCurvePiece::getSlope() const
+const double& Utility::LinearCurvePiece::getSlope() const
 {
     return slope_;
 }
 
-const float& Utility::LinearCurvePiece::getSlopeIntercept() const
+const double& Utility::LinearCurvePiece::getSlopeIntercept() const
 {
     return intercept_;
 }
 
-void Utility::PieceWiseLinearCurve::addCurvePiece(const float& slope, const float& intercept)
+void Utility::PieceWiseLinearCurve::addCurvePiece(const double& slope, const double& intercept)
 {
     curvePieces_.push_back(LinearCurvePiece(slope, intercept));
 }

@@ -10,13 +10,13 @@ void DefinitionStorage::readDefinitions()
 {
 
     readUtilityDefs();
-	readActivityDefs(); // depends on utility defs
+    readActivityDefs(); // depends on utility defs
     readCommodityDefs(); // depends on utility defs
 }
 
 const std::map<std::string, std::shared_ptr<Activity>>& DefinitionStorage::getActivityDefinitions() const
 {
-	return activityDefs_;
+    return activityDefs_;
 }
 
 const std::map<std::string, std::shared_ptr<Utility>>& DefinitionStorage::getUtilityDefinitions() const
@@ -50,8 +50,8 @@ void DefinitionStorage::readUtilityDefs()
             XMLElement* curvePiece = curve->FirstChildElement("piece");
             while (curvePiece)
             {
-                float slope = std::atof(curvePiece->FirstChildElement("slope")->GetText());
-                float intercept = std::atof(curvePiece->FirstChildElement("intercept")->GetText());
+                double slope = std::atof(curvePiece->FirstChildElement("slope")->GetText());
+                double intercept = std::atof(curvePiece->FirstChildElement("intercept")->GetText());
                 utilCurve.addCurvePiece(slope, intercept);
 
                 curvePiece = curvePiece->NextSiblingElement();
@@ -93,7 +93,7 @@ void DefinitionStorage::readCommodityDefs()
                 while (utility)
                 {
                     std::string utilityId = utility->FirstChildElement("id")->GetText();
-                    float amount = std::atof(utility->FirstChildElement("amount")->GetText());
+                    double amount = std::atof(utility->FirstChildElement("amount")->GetText());
 
 
                     auto& actualUtility = utilityDefs_.find(utilityId)->second;
@@ -112,43 +112,43 @@ void DefinitionStorage::readCommodityDefs()
 
 void DefinitionStorage::readActivityDefs()
 {
-	XMLDocument activityDoc;
-	activityDoc.LoadFile(activityDefFilename_.c_str());
+    XMLDocument activityDoc;
+    activityDoc.LoadFile(activityDefFilename_.c_str());
 
-	XMLElement* main = activityDoc.FirstChildElement("activities");
+    XMLElement* main = activityDoc.FirstChildElement("activities");
 
-	if (main)
-	{
-		XMLElement* activity = main->FirstChildElement("activity");
-		while (activity)
-		{
-			std::string id = activity->FirstChildElement("id")->GetText();
-			std::string name = activity->FirstChildElement("name")->GetText();
-			std::string description = activity->FirstChildElement("description")->GetText();
+    if (main)
+    {
+        XMLElement* activity = main->FirstChildElement("activity");
+        while (activity)
+        {
+            std::string id = activity->FirstChildElement("id")->GetText();
+            std::string name = activity->FirstChildElement("name")->GetText();
+            std::string description = activity->FirstChildElement("description")->GetText();
 
-			std::shared_ptr<Activity> com = std::make_shared<Activity>(name);
-			com->setDescription(description);
+            std::shared_ptr<Activity> com = std::make_shared<Activity>(name);
+            com->setDescription(description);
 
-			XMLElement* utilities = activity->FirstChildElement("utilities");
-			if (utilities)
-			{
-				XMLElement* utility = utilities->FirstChildElement("utility");
-				while (utility)
-				{
-					std::string utilityId = utility->FirstChildElement("id")->GetText();
-					float amount = std::atof(utility->FirstChildElement("amount")->GetText());
+            XMLElement* utilities = activity->FirstChildElement("utilities");
+            if (utilities)
+            {
+                XMLElement* utility = utilities->FirstChildElement("utility");
+                while (utility)
+                {
+                    std::string utilityId = utility->FirstChildElement("id")->GetText();
+                    double amount = std::atof(utility->FirstChildElement("amount")->GetText());
 
 
-					auto& actualUtility = utilityDefs_.find(utilityId)->second;
-					com->addUtility(actualUtility, amount);
+                    auto& actualUtility = utilityDefs_.find(utilityId)->second;
+                    com->addUtility(actualUtility, amount);
 
-					utility = utility->NextSiblingElement();
-				}
-			}
+                    utility = utility->NextSiblingElement();
+                }
+            }
 
-			activityDefs_[id] = com;
+            activityDefs_[id] = com;
 
-			activity = activity->NextSiblingElement();
-		}
-	}
+            activity = activity->NextSiblingElement();
+        }
+    }
 }
