@@ -18,6 +18,7 @@ public:
 
     const std::shared_ptr<Commodity>& getProduct() const;
 
+    double moneys = 100.0;
 private:
     double plannedProductionAmount_;
     double plannedPrice_;
@@ -25,6 +26,8 @@ private:
     double capacity_;
 
     double prevPrice_;
+
+
 
     const std::shared_ptr<Commodity> product_;
     Inventory inventory_;

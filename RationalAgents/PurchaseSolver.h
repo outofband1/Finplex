@@ -23,6 +23,9 @@ public:
 
     void clearAmountsAndPrices();
 
+    void removeUtilitySource(const std::shared_ptr<Commodity>& commodity);
+    void removeUtilitySource(const std::shared_ptr<Activity>& activity);
+
     void OptimizeTimeAndPurchases(const double& time, const double& savings, const Inventory& inventory, std::map<std::shared_ptr<Commodity>, double>& commodityPurchases, std::map<std::shared_ptr<Activity>, double>& activityPurchases) const;
 
 private:

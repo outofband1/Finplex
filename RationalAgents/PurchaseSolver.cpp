@@ -50,6 +50,24 @@ void PurchaseSolver::clearAmountsAndPrices()
     activityAmountsAndPrices_.clear();
 }
 
+void PurchaseSolver::removeUtilitySource(const std::shared_ptr<Commodity>& commodity)
+{
+    auto& com = commodityAmountsAndPrices_.find(commodity);
+    if (com != commodityAmountsAndPrices_.end())
+    {
+        commodityAmountsAndPrices_.erase(com);
+    }
+}
+
+void PurchaseSolver::removeUtilitySource(const std::shared_ptr<Activity>& activity)
+{
+    auto& act = activityAmountsAndPrices_.find(activity);
+    if (act != activityAmountsAndPrices_.end())
+    {
+        activityAmountsAndPrices_.erase(act);
+    }
+}
+
 void PurchaseSolver::OptimizeTimeAndPurchases(const double& time, const double& savings, const Inventory& inventory, std::map<std::shared_ptr<Commodity>, double>& commodityPurchases, std::map<std::shared_ptr<Activity>, double>& activityPurchases) const
 {
 
@@ -170,7 +188,7 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const double& time, const double& 
 
         tableauData[(curvePieceCount + 2)*colCount + colIndex] = 1;
         tableauData[(curvePieceCount + 2)*colCount + colCount - 1] = time;
-        tableauData[(curvePieceCount + 2)*colCount + utilitySourceCount + utilityCount + curvePieceCount] = 1;
+        //tableauData[(curvePieceCount + 2)*colCount + utilitySourceCount + utilityCount + curvePieceCount] = 4;
 
 
         size_t rowIndex = 1; // row 0 is cost function
@@ -221,6 +239,7 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const double& time, const double& 
         }
         colIndexutilitySource++;
     }
+
     for (auto& activity : activityAmountsAndPrices_)
     {
 
@@ -241,19 +260,46 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const double& time, const double& 
 
     m.setTableau(tableauData);
 
+    //m.printTableau();
+
+
+
     double maxedUtility;
     std::vector<double> basicVariablesValues;
 
-    m.Solve(maxedUtility, basicVariablesValues);
-
-    for (auto& comCol : commodityCol)
+    try
     {
-        commodityPurchases[comCol.second] = basicVariablesValues[comCol.first];
+        m.Solve(maxedUtility, basicVariablesValues);
+
+        for (auto& comCol : commodityCol)
+        {
+            if (basicVariablesValues.size() > comCol.first)
+            {
+                commodityPurchases[comCol.second] = basicVariablesValues[comCol.first];
+            }
+        }
+
+        for (auto& actCol : activityCol)
+        {
+            if (basicVariablesValues.size() > actCol.first)
+            {
+                activityPurchases[actCol.second] = basicVariablesValues[actCol.first];
+            }
+
+        }
+
+        if (commodityPurchases.size() == 0)
+        {
+            m.setTableau(tableauData);
+            m.printTableau();
+        }
+
+    }
+    catch (...)
+    {
+        m.setTableau(tableauData);
+        m.printTableau();
+        std::cout << "uh oh" << std::endl;
     }
 
-    for (auto& actCol : activityCol)
-    {
-        activityPurchases[actCol.second] = basicVariablesValues[actCol.first];
-
-    }
 }

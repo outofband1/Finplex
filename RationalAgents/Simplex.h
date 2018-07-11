@@ -190,7 +190,7 @@ private:
     inline
     size_t findEnteringVariableIndex() const
     {
-        TYPE minValue = 0;
+        TYPE minValue = -10E-6;
         size_t minPos = -1;
         for (size_t i = 0; i < colCount_; i++)
         {
