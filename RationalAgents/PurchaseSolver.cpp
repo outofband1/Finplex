@@ -164,7 +164,7 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const double& time, const double& 
 
             const Utility::PieceWiseLinearCurve& curve = utility->getCurve();
 
-            double currentAmount = inventory.getAmount(commodity.first);
+            double currentAmount = 0.0; // inventory.getAmount(commodity.first);
 
             for (auto& piece : curve.getCurvePieces())
             {

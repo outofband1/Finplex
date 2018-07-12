@@ -3,20 +3,23 @@
 #include <memory>
 
 #include "Inventory.h"
+#include "Entity.h"
 
-class Commodity;
 class PurchaseSolver;
+class Commodity;
+class Market;
 
-class Producer
+class Producer : public Entity
 {
 public:
-    Producer(const std::shared_ptr<Commodity>& product);
+    Producer(const std::string& name, const std::shared_ptr<Commodity>& product);
 
-    double planProduction(PurchaseSolver& purchaseSolver, const double& previousAmount, const double& previousPrice);
+    double optimizeProductionAndPrice(PurchaseSolver& purchaseSolver, const Market& market);
+    void goToMarket(Market & market);
 
     const double& getCapacity() const;
 
-    const std::shared_ptr<Commodity>& getProduct() const;
+    const std::shared_ptr<TradableGood>& getProduct() const;
 
     double moneys = 100.0;
 private:
@@ -25,11 +28,5 @@ private:
 
     double capacity_;
 
-    double prevPrice_;
-
-
-
-    const std::shared_ptr<Commodity> product_;
-    Inventory inventory_;
-    Inventory market_;
+    std::shared_ptr<TradableGood> product_;
 };

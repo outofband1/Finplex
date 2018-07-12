@@ -40,4 +40,9 @@
       </utility>
     </utilities>
   </commodity>
+  <commodity>
+    <id>currency</id>
+    <name>Currency</name>
+    <description>Paper slips with strange writing on them.</description>
+  </commodity>
 </commodities>

@@ -1,24 +1,24 @@
 #include "Inventory.h"
 
-void Inventory::add(const std::shared_ptr<Commodity>& commodity, const double& amount)
+void Inventory::add(const std::shared_ptr<TradableGood>& good, const double& amount)
 {
-    auto& currentStore = inventory_.find(commodity);
+    auto& currentStore = inventory_.find(good);
     if (currentStore != inventory_.end())
     {
         currentStore->second += amount;
     }
     else
     {
-        inventory_[commodity] = amount;
+        inventory_[good] = amount;
     }
 }
 
-void Inventory::remove(const std::shared_ptr<Commodity>& commodity, const double& amount)
+void Inventory::remove(const std::shared_ptr<TradableGood>& good, const double& amount)
 {
-    auto& currentStore = inventory_.find(commodity);
-    if (currentStore != inventory_.end() && currentStore->second <= amount)
+    auto& currentStore = inventory_.find(good);
+    if (currentStore != inventory_.end() && currentStore->second >= amount - 10E-8)
     {
-        currentStore->second -= amount;
+        currentStore->second -= amount - 10E-8;
     }
     else
     {
@@ -26,9 +26,9 @@ void Inventory::remove(const std::shared_ptr<Commodity>& commodity, const double
     }
 }
 
-double Inventory::getAmount(const std::shared_ptr<Commodity>& commodity) const
+double Inventory::getAmount(const std::shared_ptr<TradableGood>& good) const
 {
-    auto& currentStore = inventory_.find(commodity);
+    auto& currentStore = inventory_.find(good);
     if (currentStore != inventory_.end())
     {
         return currentStore->second;
@@ -39,8 +39,8 @@ double Inventory::getAmount(const std::shared_ptr<Commodity>& commodity) const
     }
 }
 
-void Inventory::transferTo(Inventory& inventory, const std::shared_ptr<Commodity>& commodity, const double& amount)
+void Inventory::transferTo(Inventory& targetInventory, const std::shared_ptr<TradableGood>& good, const double& amount)
 {
-    remove(commodity, amount);
-    inventory.add(commodity, amount);
+    remove(good, amount);
+    targetInventory.add(good, amount);
 }

@@ -147,13 +147,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Activity.cpp" />
+    <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Commodity.cpp" />
     <ClCompile Include="Definition.cpp" />
     <ClCompile Include="DefinitionStorage.cpp" />
     <ClCompile Include="Inventory.cpp" />
+    <ClCompile Include="Market.cpp" />
     <ClCompile Include="Producer.cpp" />
     <ClCompile Include="PurchaseSolver.cpp" />
     <ClCompile Include="tinyxml2.cpp" />
+    <ClCompile Include="TradableGood.cpp" />
     <ClCompile Include="Utility.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="UtilitySource.cpp" />
@@ -163,11 +166,14 @@
     <ClInclude Include="Commodity.h" />
     <ClInclude Include="Definition.h" />
     <ClInclude Include="DefinitionStorage.h" />
+    <ClInclude Include="Entity.h" />
     <ClInclude Include="Inventory.h" />
+    <ClInclude Include="Market.h" />
     <ClInclude Include="Producer.h" />
     <ClInclude Include="PurchaseSolver.h" />
     <ClInclude Include="Simplex.h" />
     <ClInclude Include="tinyxml2.h" />
+    <ClInclude Include="TradableGood.h" />
     <ClInclude Include="Utility.h" />
     <ClInclude Include="UtilitySource.h" />
   </ItemGroup>
