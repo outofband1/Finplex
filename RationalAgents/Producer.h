@@ -14,17 +14,17 @@ class Producer : public Entity
 public:
     Producer(const std::string& name, const std::shared_ptr<Commodity>& product);
 
-    double optimizeProductionAndPrice(PurchaseSolver& purchaseSolver, const Market& market);
-    void goToMarket(Market & market);
+    void optimizeProductionAndPrice(PurchaseSolver& purchaseSolver, const Market& market, double blah);
+    void goToMarket(Market &market);
 
     const double& getCapacity() const;
 
     const std::shared_ptr<TradableGood>& getProduct() const;
 
-    double moneys = 100.0;
-private:
     double plannedProductionAmount_;
     double plannedPrice_;
+    double plannedWage_;
+private:
 
     double capacity_;
 

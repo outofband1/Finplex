@@ -25,16 +25,30 @@
     <id>relaxation</id>
     <name>Relaxation</name>
     <description>For the slightly less dumb</description>
-    <utilities>
-      <utility>
-        <id>leisure</id>
-        <amount>0.01</amount>
-      </utility>
-    </utilities>
   </activity>
   <activity>
-    <id>unskilled labor</id>
-    <name>Unskilled labor</name>
+    <id>unskilled labor 1</id>
+    <name>Unskilled labor 1</name>
+    <description>For complete idiots</description>
+  </activity>
+  <activity>
+    <id>unskilled labor 2</id>
+    <name>Unskilled labor 2</name>
+    <description>For complete idiots</description>
+  </activity>
+  <activity>
+    <id>unskilled labor 3</id>
+    <name>Unskilled labor 3</name>
+    <description>For complete idiots</description>
+  </activity>
+  <activity>
+    <id>unskilled labor 4</id>
+    <name>Unskilled labor 4</name>
+    <description>For complete idiots</description>
+  </activity>
+  <activity>
+    <id>unskilled labor 5</id>
+    <name>Unskilled labor 5</name>
     <description>For complete idiots</description>
   </activity>
   <activity>
