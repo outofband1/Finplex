@@ -43,7 +43,7 @@
     <description>are very sensible...</description>
     <curve>
       <piece>
-        <slope>0.2</slope>
+        <slope>0.1</slope>
         <intercept>0</intercept>
       </piece>
     </curve>

@@ -12,6 +12,7 @@ Producer::Producer(const std::string& name, const std::shared_ptr<Commodity>& pr
     capacity_ = 2.0;
     plannedProductionAmount_ = capacity_ / 2.0;
     plannedPrice_ = 0.8;
+    plannedWage_ = 0.2 * 3;
 }
 
 const double& Producer::getCapacity() const
@@ -24,13 +25,12 @@ const std::shared_ptr<TradableGood>& Producer::getProduct() const
     return product_;
 }
 
-double Producer::optimizeProductionAndPrice(PurchaseSolver& purchaseSolver, const Market& market)
+void Producer::optimizeProductionAndPrice(PurchaseSolver& purchaseSolver, const Market& market, double blah)
 {
     const double stepsizePrice = 0.01;
     const double stepsizeProd = 0.05;
 
-    double cost = 1.0;
-    double minPrice = 1.1;
+    double minPrice = 0.1;
 
     Inventory summedInventories;
     double summedMoney = 0.0;
@@ -46,27 +46,27 @@ double Producer::optimizeProductionAndPrice(PurchaseSolver& purchaseSolver, cons
 
     //std::cout << plannedProductionAmount_ << "   ,   " << plannedPrice_ << std::endl;
     purchaseSolver.setPriceAndAmount(product_->getCommodity(), plannedPrice_, plannedProductionAmount_ + marketAmount);
-    purchaseSolver.OptimizeTimeAndPurchases(24, 0.0, summedInventories, commodityPurchases, activityPurchases);
+    purchaseSolver.OptimizeTimeAndPurchases(24, blah, summedInventories, commodityPurchases, activityPurchases);
     double amountSoldOrg = commodityPurchases.find(product_->getCommodity())->second;
-    double profitOrg = amountSoldOrg * plannedPrice_ - plannedProductionAmount_ - (capacity_ - amountSoldOrg) * plannedPrice_ ;
+    double profitOrg = amountSoldOrg * plannedPrice_ - plannedProductionAmount_ * plannedWage_ - (capacity_ - amountSoldOrg) * plannedPrice_ ;
 
     if (plannedPrice_ * (1 + stepsizePrice) >= minPrice && plannedProductionAmount_ > 0)
     {
         //std::cout << plannedProductionAmount_ << "   ,   " << plannedPrice_* (1 + stepsizePrice) << std::endl;
         purchaseSolver.setPriceAndAmount(product_->getCommodity(), plannedPrice_ * (1 + stepsizePrice), plannedProductionAmount_ + marketAmount);
-        purchaseSolver.OptimizeTimeAndPurchases(24, 0.0, summedInventories, commodityPurchases, activityPurchases);
+        purchaseSolver.OptimizeTimeAndPurchases(24, blah, summedInventories, commodityPurchases, activityPurchases);
     }
     double amountSoldPriceGrad = commodityPurchases.find(product_->getCommodity())->second;
-    double priceGrad = amountSoldPriceGrad * plannedPrice_ * (1 + stepsizePrice) - plannedProductionAmount_ - (capacity_ - amountSoldPriceGrad) * (1 + stepsizePrice) * plannedPrice_ - profitOrg;
+    double priceGrad = amountSoldPriceGrad * plannedPrice_ * (1 + stepsizePrice) - plannedProductionAmount_ * plannedWage_ - (capacity_ - amountSoldPriceGrad) * (1 + stepsizePrice) * plannedPrice_ - profitOrg;
 
     if (plannedProductionAmount_ * (1 + stepsizeProd) > 0 && plannedPrice_ >= minPrice)
     {
         //std::cout << plannedProductionAmount_ * (1 + stepsizeProd) << "   ,   " << plannedPrice_ << std::endl;
         purchaseSolver.setPriceAndAmount(product_->getCommodity(), plannedPrice_, plannedProductionAmount_ * (1 + stepsizeProd) + marketAmount);
-        purchaseSolver.OptimizeTimeAndPurchases(24, 0.0, summedInventories, commodityPurchases, activityPurchases);
+        purchaseSolver.OptimizeTimeAndPurchases(24, blah, summedInventories, commodityPurchases, activityPurchases);
     }
     double amountSoldProducedGrad = commodityPurchases.find(product_->getCommodity())->second;
-    double producedGrad = amountSoldProducedGrad * plannedPrice_ - plannedProductionAmount_ * (1 + stepsizeProd) - (capacity_ - amountSoldProducedGrad) * plannedPrice_ - profitOrg;
+    double producedGrad = amountSoldProducedGrad * plannedPrice_ - plannedProductionAmount_ * (1 + stepsizeProd) * plannedWage_ - (capacity_ - amountSoldProducedGrad) * plannedPrice_ - profitOrg;
 
     double len = sqrt(priceGrad * priceGrad + producedGrad * producedGrad);
     if (len > 0.0)
@@ -98,34 +98,13 @@ double Producer::optimizeProductionAndPrice(PurchaseSolver& purchaseSolver, cons
     {
         plannedPrice_ = minPrice;
     }
-
-    std::cout << "Producing: " << plannedProductionAmount_ << " " << product_->getCommodity()->getName() << " at price: " << plannedPrice_ << " for profit: " << profitOrg + (capacity_ - amountSoldOrg)*plannedPrice_ << std::endl;
-
-    /*if (plannedProductionAmount_ > 0 && plannedPrice_ >= minPrice)
-    {
-        if (getCurrency() >= plannedProductionAmount_ * cost)
-        {
-            getInventory().add(product_, plannedProductionAmount_);
-            removeCurrency(plannedProductionAmount_ * cost);
-
-            purchaseSolver.setPriceAndAmount(product_->getCommodity(), plannedPrice_, plannedProductionAmount_);
-        }
-
-    }
-    else
-    {
-        purchaseSolver.removeUtilitySource(product_->getCommodity());
-    }*/
-
-    return plannedPrice_;
 }
 
 void Producer::goToMarket(Market& market)
 {
-    if (getCurrency() >= plannedProductionAmount_ * 1)
+    if (getCurrency() >= plannedProductionAmount_ * plannedWage_)
     {
         getInventory().add(product_, plannedProductionAmount_);
-        removeCurrency(plannedProductionAmount_ * 1);
     }
 
     double amountStored = getInventory().getAmount(product_);
