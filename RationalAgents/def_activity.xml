@@ -1,7 +1,7 @@
 <activities>
   <activity>
     <id>sleep</id>
-    <name>Sleep</name>
+    <name>aSleep</name>
     <description>zzZZzz</description>
     <utilities>
       <utility>
@@ -12,7 +12,7 @@
   </activity>
   <activity>
     <id>leisure</id>
-    <name>Leisure</name>
+    <name>aLeis</name>
     <description>Relaxation and stuff</description>
     <utilities>
       <utility>
@@ -23,32 +23,32 @@
   </activity>
   <activity>
     <id>relaxation</id>
-    <name>Relaxation</name>
+    <name>Relax</name>
     <description>For the slightly less dumb</description>
   </activity>
   <activity>
     <id>unskilled labor 1</id>
-    <name>Unskilled labor 1</name>
+    <name>ul1</name>
     <description>For complete idiots</description>
   </activity>
   <activity>
     <id>unskilled labor 2</id>
-    <name>Unskilled labor 2</name>
+    <name>ul2</name>
     <description>For complete idiots</description>
   </activity>
   <activity>
     <id>unskilled labor 3</id>
-    <name>Unskilled labor 3</name>
+    <name>ul3</name>
     <description>For complete idiots</description>
   </activity>
   <activity>
     <id>unskilled labor 4</id>
-    <name>Unskilled labor 4</name>
+    <name>ul4</name>
     <description>For complete idiots</description>
   </activity>
   <activity>
     <id>unskilled labor 5</id>
-    <name>Unskilled labor 5</name>
+    <name>ul5</name>
     <description>For complete idiots</description>
   </activity>
   <activity>

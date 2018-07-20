@@ -39,7 +39,7 @@
   </utility>
   <utility>
     <id>savings</id>
-    <name>Savings</name>
+    <name>Save</name>
     <description>are very sensible...</description>
     <curve>
       <piece>
@@ -50,7 +50,7 @@
   </utility>
   <utility>
     <id>leisure</id>
-    <name>Leisure time</name>
+    <name>Leis</name>
     <description>Ahhh</description>
     <curve>
       <piece>

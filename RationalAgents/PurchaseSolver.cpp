@@ -7,6 +7,7 @@
 #include "Commodity.h"
 #include "Activity.h"
 #include "Inventory.h"
+#include <string.h>
 
 PurchaseSolver::PurchaseSolver()
 {
@@ -260,7 +261,7 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const double& time, const double& 
 
     m.setTableau(tableauData);
 
-    //m.printTableau();
+    m.printTableau();
 
 
 
@@ -302,4 +303,168 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const double& time, const double& 
         std::cout << "uh oh" << std::endl;
     }
 
+}
+
+
+#include "lp_lib.h"
+
+void PurchaseSolver::OptimizeTimeAndPurchases2(const double& time, const double& savings, const Inventory& inventory, std::map<std::shared_ptr<Commodity>, double>& commodityPurchases, std::map<std::shared_ptr<Activity>, double>& activityPurchases) const
+{
+    size_t utilitySourceCount = commodityAmountsAndPrices_.size() + activityAmountsAndPrices_.size();
+    size_t utilityCount = utilities_.size();
+
+    int objectiveCount = utilitySourceCount + utilityCount;
+
+    lprec *lp;
+
+    if ((lp = make_lp(0, objectiveCount)) == nullptr)
+    {
+        throw;
+    }
+
+    std::map < std::pair<std::shared_ptr<Utility>, int>, std::vector<double>> vals;
+    std::map < std::pair<std::shared_ptr<Utility>, int>, std::vector<int>> cols;
+
+    std::vector<int> timeConstraintCols;
+    std::vector<double> timeConstraintVals;
+
+    std::vector<int> moneyConstraintCols;
+    std::vector<double> moneyConstraintVals;
+
+    //set_maxim(lp);
+    char name[256];
+    int colIndex = 1;
+    for (auto& commodity : commodityAmountsAndPrices_)
+    {
+        const double& amount = commodity.second.amount_;
+
+        strncpy_s(name, commodity.first->getName().c_str(), 255);
+        set_col_name(lp, colIndex, name);
+
+        if (abs(amount) >= 0)
+        {
+            set_bounds(lp, colIndex, 0.0, amount);
+        }
+
+        for (auto& comUtil : commodity.first->getUtilities())
+        {
+            int pieceIndex = 0;
+            for (auto& curvePiece : comUtil.first->getCurve().getCurvePieces())
+            {
+                if (abs(-curvePiece.getSlope() * comUtil.second) > 10E-6)
+                {
+                    std::pair<std::shared_ptr<Utility>, int> p = std::make_pair(comUtil.first, pieceIndex);
+                    auto& it = cols.find(p);
+                    if (it == cols.end())
+                    {
+                        cols[p] = std::vector<int>();
+                        vals[p] = std::vector<double>();
+                    }
+
+                    cols[p].push_back(colIndex);
+                    vals[p].push_back(-curvePiece.getSlope() * comUtil.second);
+                }
+
+                pieceIndex++;
+            }
+        }
+
+        if (abs(commodity.second.price_) > 10E-6)
+        {
+            moneyConstraintCols.push_back(colIndex);
+            moneyConstraintVals.push_back(commodity.second.price_);
+        }
+
+        colIndex++;
+    }
+
+    for (auto& activity : activityAmountsAndPrices_)
+    {
+        const double& amount = activity.second.amount_;
+
+        strncpy_s(name, activity.first->getName().c_str(), 255);
+        set_col_name(lp, colIndex, name);
+
+        if (amount >= 0)
+        {
+            set_bounds(lp, colIndex, 0.0, amount);
+        }
+
+        for (auto& actUtil : activity.first->getUtilities())
+        {
+            int pieceIndex = 0;
+            for (auto& curvePiece : actUtil.first->getCurve().getCurvePieces())
+            {
+                if (abs(-curvePiece.getSlope() * actUtil.second) > 10E-6)
+                {
+                    std::pair<std::shared_ptr<Utility>, int> p = std::make_pair(actUtil.first, pieceIndex);
+                    auto& it = cols.find(p);
+                    if (it == cols.end())
+                    {
+                        cols[p] = std::vector<int>();
+                        vals[p] = std::vector<double>();
+                    }
+
+                    cols[p].push_back(colIndex);
+                    vals[p].push_back(-curvePiece.getSlope() * actUtil.second);
+                }
+
+
+                pieceIndex++;
+            }
+        }
+
+        timeConstraintCols.push_back(colIndex);
+        timeConstraintVals.push_back(1.0);
+
+        if (abs(activity.second.price_) > 10E-6)
+        {
+            moneyConstraintCols.push_back(colIndex);
+            moneyConstraintVals.push_back(activity.second.price_);
+        }
+
+        colIndex++;
+    }
+
+    for (auto& utility : utilities_)
+    {
+        strncpy_s(name, utility->getName().c_str(), 255);
+        set_col_name(lp, colIndex, name);
+        set_obj(lp, colIndex, -1);
+
+        const Utility::PieceWiseLinearCurve& curve = utility->getCurve();
+
+        int pieceIndex = 0;
+        for (auto& piece : curve.getCurvePieces())
+        {
+            const double& intercept = piece.getSlopeIntercept();
+            //int cols[1];
+            //double val[1];
+            //cols[0] = colIndex;
+            //val[0] = 1;
+
+            std::pair<std::shared_ptr<Utility>, int> p = std::make_pair(utility, pieceIndex);
+
+            cols[p].push_back(colIndex);
+            vals[p].push_back(1);
+
+            add_constraintex(lp, cols[p].size(), vals[p].data(), cols[p].data(), LE, intercept);
+
+            pieceIndex++;
+        }
+
+        colIndex++;
+    }
+
+    add_constraintex(lp, timeConstraintCols.size(), timeConstraintVals.data(), timeConstraintCols.data(), LE, 24);
+    add_constraintex(lp, moneyConstraintCols.size(), moneyConstraintVals.data(), moneyConstraintCols.data(), LE, 0.0);
+
+    //unscale(lp);
+    print_lp(lp);
+
+    printf("%d", solve(lp));
+
+    print_solution(lp, 1);
+
+    delete_lp(lp);
 }
