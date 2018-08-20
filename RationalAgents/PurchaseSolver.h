@@ -28,7 +28,7 @@ public:
 
     void OptimizeTimeAndPurchases(const double& time, const double& savings, const Inventory& inventory, std::map<std::shared_ptr<Commodity>, double>& commodityPurchases, std::map<std::shared_ptr<Activity>, double>& activityPurchases) const;
 
-    void OptimizeTimeAndPurchases2(const double& time, const double& savings, const Inventory& inventory, std::map<std::shared_ptr<Commodity>, double>& commodityPurchases, std::map<std::shared_ptr<Activity>, double>& activityPurchases) const;
+    double OptimizeTimeAndPurchases2(const double& time, const double& savings, const bool& laborConstraints, const Inventory& inventory, std::map<std::shared_ptr<Commodity>, double>& commodityPurchases, std::map<std::shared_ptr<Activity>, double>& activityPurchases) const;
 
 private:
     struct PriceAndAmount

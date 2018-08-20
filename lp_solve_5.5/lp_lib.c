@@ -1397,13 +1397,13 @@ lprec * __WINAPI make_lp(int rows, int columns)
   set_callbacks(lp);
   set_BFP(lp, NULL);
   set_XLI(lp, NULL);
-#if libBLAS > 0
-  init_BLAS();
-#if libBLAS > 1
-  if(is_nativeBLAS() && !load_BLAS(libnameBLAS))
+//#if libBLAS > 0
+//  init_BLAS();
+//#if libBLAS > 1
+//  if(is_nativeBLAS() && !load_BLAS(libnameBLAS))
     /*report(lp, "make_lp: Could not load external BLAS library '%s'.\n", libnameBLAS)*/;
-#endif
-#endif
+//#endif
+//#endif
 
   /* Define the defaults for key user-settable values --------------------------------------- */
   reset_params(lp);

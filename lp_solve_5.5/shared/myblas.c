@@ -48,27 +48,12 @@ void init_BLAS(void)
 
 MYBOOL is_nativeBLAS(void)
 {
-#ifdef LoadableBlasLib
-  return( (MYBOOL) (hBLAS == NULL) );
-#else
   return( TRUE );
-#endif
 }
 
 MYBOOL load_BLAS(char *libname)
 {
   MYBOOL result = TRUE;
-
-#ifdef LoadableBlasLib
-  if(hBLAS != NULL) {
-  #ifdef WIN32
-    FreeLibrary(hBLAS);
-  #else
-    dlclose(hBLAS);
-  #endif
-    hBLAS = NULL;
-  }
-#endif
 
   if(libname == NULL) {
     if(!mustinitBLAS && is_nativeBLAS())
@@ -85,60 +70,7 @@ MYBOOL load_BLAS(char *libname)
       mustinitBLAS = FALSE;
   }
   else {
-#ifdef LoadableBlasLib
-  #ifdef WIN32
-   /* Get a handle to the Windows DLL module. */
-    hBLAS = LoadLibrary(libname);
 
-   /* If the handle is valid, try to get the function addresses. */
-    result = (MYBOOL) (hBLAS != NULL);
-    if(result) {
-      BLAS_dscal  = (BLAS_dscal_func *)  GetProcAddress(hBLAS, BLAS_prec "scal");
-      BLAS_dcopy  = (BLAS_dcopy_func *)  GetProcAddress(hBLAS, BLAS_prec "copy");
-      BLAS_daxpy  = (BLAS_daxpy_func *)  GetProcAddress(hBLAS, BLAS_prec "axpy");
-      BLAS_dswap  = (BLAS_dswap_func *)  GetProcAddress(hBLAS, BLAS_prec "swap");
-      BLAS_ddot   = (BLAS_ddot_func *)   GetProcAddress(hBLAS, BLAS_prec "dot");
-      BLAS_idamax = (BLAS_idamax_func *) GetProcAddress(hBLAS, "i" BLAS_prec "amax");
-#if 0      
-      BLAS_dload  = (BLAS_dload_func *)  GetProcAddress(hBLAS, BLAS_prec "load");
-      BLAS_dnormi = (BLAS_dnormi_func *) GetProcAddress(hBLAS, BLAS_prec "normi");
-#endif      
-    }
-  #else
-   /* First standardize UNIX .SO library name format. */
-    char blasname[260], *ptr;
-
-    strcpy(blasname, libname);
-    if((ptr = strrchr(libname, '/')) == NULL)
-      ptr = libname;
-    else
-      ptr++;
-    blasname[(int) (ptr - libname)] = 0;
-    if(strncmp(ptr, "lib", 3))
-      strcat(blasname, "lib");
-    strcat(blasname, ptr);
-    if(strcmp(blasname + strlen(blasname) - 3, ".so"))
-      strcat(blasname, ".so");
-
-   /* Get a handle to the module. */
-    hBLAS = dlopen(blasname, RTLD_LAZY);
-
-   /* If the handle is valid, try to get the function addresses. */
-    result = (MYBOOL) (hBLAS != NULL);
-    if(result) {
-      BLAS_dscal  = (BLAS_dscal_func *)  dlsym(hBLAS, BLAS_prec "scal");
-      BLAS_dcopy  = (BLAS_dcopy_func *)  dlsym(hBLAS, BLAS_prec "copy");
-      BLAS_daxpy  = (BLAS_daxpy_func *)  dlsym(hBLAS, BLAS_prec "axpy");
-      BLAS_dswap  = (BLAS_dswap_func *)  dlsym(hBLAS, BLAS_prec "swap");
-      BLAS_ddot   = (BLAS_ddot_func *)   dlsym(hBLAS, BLAS_prec "dot");
-      BLAS_idamax = (BLAS_idamax_func *) dlsym(hBLAS, "i" BLAS_prec "amax");
-#if 0      
-      BLAS_dload  = (BLAS_dload_func *)  dlsym(hBLAS, BLAS_prec "load");
-      BLAS_dnormi = (BLAS_dnormi_func *) dlsym(hBLAS, BLAS_prec "normi");
-#endif      
-    }
-  #endif
-#endif
     /* Do validation */
     if(!result ||
        ((BLAS_dscal  == NULL) ||

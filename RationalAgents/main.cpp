@@ -19,262 +19,16 @@
 
 #include "lp_lib.h"
 
-static void __WINAPI Mylogfunc(lprec *lp, void *userhandle, char *buf)
+struct pAndA
 {
-    //std::cout << buf;
-}
-
-static void __WINAPI Mymsgfunc(lprec *lp, void *userhandle, int message)
-{
-    // std::cout << message;
-}
-
-
-static void press_ret()
-{
-    system("pause");
-}
+	double price;
+	double amount;
+	bool priceLocked;
+};
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-
     PurchaseSolver pSolver;
-
-
-
-    /*lprec *lp;
-
-    //char buf[1024];
-
-    if ((lp = make_lp(0, 4)) == nullptr)
-    {
-        throw;
-    }
-
-    put_logfunc(lp, NULL, 0);
-    solve(lp);
-    //put_abortfunc(lp, Myctrlcfunc, 0);
-    //put_msgfunc(lp, Mymsgfunc, 0, MSG_PRESOLVE | MSG_LPFEASIBLE | MSG_LPOPTIMAL | MSG_MILPEQUAL | MSG_MILPFEASIBLE | MSG_MILPBETTER);
-
-    //printf("We can show the current problem with print_lp(lp)\n");k
-    print_lp(lp);
-    press_ret();
-    printf("Now we add some constraints\n");
-    printf("add_constraint(lp, {0, 3, 2, 2, 1}, LE, 4)\n");
-    {
-        double row[] = { 0, 3, 2, 2, 1 };
-        if (!add_constraint(lp, row, LE, 4))
-        {
-            throw;
-        }
-    }
-    print_lp(lp);
-    press_ret();
-    printf("add_constraintex is now used to add a row. Only the npn-zero values must be specfied with this call.\n");
-    printf("add_constraintex(lp, 3, {4, 3, 1}, {2, 3, 4}, GE, 3)\n");
-    {
-        int colno[] = { 2, 3, 4 };
-        double row[] = { 4, 3, 1 };
-        if (!add_constraintex(lp, sizeof(colno) / sizeof(*colno), row, colno, GE, 3))
-        {
-            throw;
-        }
-    }
-    print_lp(lp);
-    press_ret();
-    printf("Set the objective function\n");
-    printf("set_obj_fn(lp, {0, 2, 3, -2, 3})\n");
-    {
-        double row[] = { 0, 2, 3, -2, 3 };
-        if (!set_obj_fn(lp, row))
-        {
-            throw;
-        }
-    }
-    print_lp(lp);
-    press_ret();
-    printf("Now solve the problem with printf(solve(lp));\n");
-    printf("%d", solve(lp));
-    press_ret();
-    printf("The value is 0, this means we found an optimal solution\n");
-    printf("We can display this solution with print_objective(lp) and print_solution(lp)\n");
-    print_objective(lp);
-    print_solution(lp, 1);
-    print_constraints(lp, 1);
-
-    press_ret();
-    printf("The dual variables of the solution are printed with\n");
-    printf("print_duals(lp);\n");
-    print_duals(lp);
-    press_ret();
-    printf("We can change a single element in the matrix with\n");
-    printf("set_mat(lp,2,1,0.5)\n");
-    if (!set_mat(lp, 2, 1, 0.5))
-    {
-        throw;
-    }
-    print_lp(lp);
-    press_ret();
-    printf("If we want to maximize the objective function use set_maxim(lp);\n");
-    set_maxim(lp);
-    print_lp(lp);
-    press_ret();
-    printf("after solving this gives us:\n");
-    solve(lp);
-    print_objective(lp);
-    print_solution(lp, 1);
-    print_constraints(lp, 1);
-    print_duals(lp);
-    press_ret();
-    printf("Change the value of a rhs element with set_rh(lp,1,7.45)\n");
-    set_rh(lp, 1, 7.45);
-    print_lp(lp);
-    solve(lp);
-    print_objective(lp);
-    print_solution(lp, 1);
-    print_constraints(lp, 1);
-    press_ret();
-    printf("We change %s to the integer type with\n", get_col_name(lp, 4));
-    printf("set_int(lp, 4, TRUE)\n");
-    set_int(lp, 4, TRUE);
-    print_lp(lp);
-    printf("We set branch & bound debugging on with set_debug(lp, TRUE)\n");
-    set_debug(lp, TRUE);
-    printf("and solve...\n");
-    press_ret();
-    solve(lp);
-    print_objective(lp);
-    print_solution(lp, 1);
-    print_constraints(lp, 1);
-    press_ret();
-    printf("We can set bounds on the variables with\n");
-    printf("set_lowbo(lp,2,2); & set_upbo(lp,4,5.3)\n");
-    set_lowbo(lp, 2, 2);
-    set_upbo(lp, 4, 5.3);
-    print_lp(lp);
-    press_ret();
-    solve(lp);
-    print_objective(lp);
-    print_solution(lp, 1);
-    print_constraints(lp, 1);
-    press_ret();
-    printf("Now remove a constraint with del_constraint(lp, 1)\n");
-    del_constraint(lp, 1);
-    print_lp(lp);
-    printf("Add an equality constraint\n");
-    {
-        double row[] = { 0, 1, 2, 1, 4 };
-        if (!add_constraint(lp, row, EQ, 8))
-        {
-            throw;
-        }
-    }
-    print_lp(lp);
-    press_ret();
-    printf("A column can be added with:\n");
-    printf("add_column(lp,{3, 2, 2});\n");
-    {
-        double col[] = { 3, 2, 2 };
-        if (!add_column(lp, col))
-        {
-            throw;
-        }
-    }
-    print_lp(lp);
-    press_ret();
-    printf("A column can be removed with:\n");
-    printf("del_column(lp,3);\n");
-    del_column(lp, 3);
-    print_lp(lp);
-    press_ret();
-    printf("We can use automatic scaling with:\n");
-    printf("set_scaling(lp, SCALE_MEAN);\n");
-    set_scaling(lp, SCALE_MEAN);
-    print_lp(lp);
-    press_ret();
-    printf("The function get_mat(lprec *lp, int row, int column) returns a single\n");
-    printf("matrix element\n");
-    printf("%s get_mat(lp,2,3), get_mat(lp,1,1); gives\n", "printf(\"%f %f\\n\",");
-    printf("%f %f\n", (double)get_mat(lp, 2, 3), (double)get_mat(lp, 1, 1));
-    printf("Notice that get_mat returns the value of the original unscaled problem\n");
-    press_ret();
-    printf("If there are any integer type variables, then only the rows are scaled\n");
-    printf("set_scaling(lp, SCALE_MEAN);\n");
-    set_scaling(lp, SCALE_MEAN);
-    printf("set_int(lp,3,FALSE);\n");
-    set_int(lp, 3, FALSE);
-    print_lp(lp);
-    press_ret();
-    solve(lp);
-    printf("print_objective, print_solution gives the solution to the original problem\n");
-    print_objective(lp);
-    print_solution(lp, 1);
-    print_constraints(lp, 1);
-    press_ret();
-    printf("Scaling is turned off with unscale(lp);\n");
-    unscale(lp);
-    print_lp(lp);
-    press_ret();
-    printf("Now turn B&B debugging off and simplex tracing on with\n");
-    printf("set_debug(lp, FALSE), set_trace(lp, TRUE) and solve(lp)\n");
-    set_debug(lp, FALSE);
-    set_trace(lp, TRUE);
-    press_ret();
-    solve(lp);
-    printf("Where possible, lp_solve will start at the last found basis\n");
-    printf("We can reset the problem to the initial basis with\n");
-    printf("default_basis(lp). Now solve it again...\n");
-    press_ret();
-    default_basis(lp);
-    solve(lp);
-
-    printf("It is possible to give variables and constraints names\n");
-    printf("set_row_name(lp,1,\"speed\"); & set_col_name(lp,2,\"money\")\n");
-    if (!set_row_name(lp, 1, "speed"))
-    {
-        throw;
-    }
-    if (!set_col_name(lp, 2, "money"))
-    {
-        throw;
-    }
-    print_lp(lp);
-    printf("As you can see, all column and rows are assigned default names\n");
-    printf("If a column or constraint is deleted, the names shift place also:\n");
-    press_ret();
-    printf("del_column(lp,1);\n");
-    del_column(lp, 1);
-    print_lp(lp);
-    press_ret();
-
-    write_lp(lp, "lp.lp");
-
-    delete_lp(lp);
-
-    printf("An lp structure can be created and read from a .lp file\n");
-    printf("lp = read_LP(\"lp.lp\", TRUE);\n");
-    printf("The verbose option is used\n");
-    if ((lp = read_LP("lp.lp", TRUE, "test")) == NULL)
-    {
-        throw;
-    }
-    press_ret();
-    printf("lp is now:\n");
-    print_lp(lp);
-
-    press_ret();
-    printf("solution:\n");
-    set_debug(lp, TRUE);
-    solve(lp);
-    set_debug(lp, FALSE);
-    print_objective(lp);
-    print_solution(lp, 1);
-    print_constraints(lp, 1);
-    press_ret();
-
-    delete_lp(lp);
-
-    system("pause");*/
 
     DefinitionStorage defStore;
     defStore.readDefinitions();
@@ -311,127 +65,190 @@ int _tmain(int argc, _TCHAR* argv[])
     std::shared_ptr<Producer> p5 = std::make_shared<Producer>("Beer Producer 2", beer2);
     p5->addCurrency(1000.0);
 
+	std::shared_ptr<Commodity> beer3 = std::make_shared<Commodity>(*(defStore.getCommodityDefinitions().find("beer")->second));
+	beer3->setName("b3");
+	
+	
+
     Inventory inv;
 
     std::map<std::shared_ptr<Commodity>, double> commodityPurchases;
     std::map<std::shared_ptr<Activity>, double> activityPurchases;
 
-    solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("savings")->second, 1.0f, -1.0);
-    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("leisure")->second, 0.5f, 3.0);
+    //solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("savings")->second, 1.0f, -1.0);
+    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("leisure")->second, 0.2f, 3.0);
     solver.setPriceAndAmount(defStore.getActivityDefinitions().find("sleep")->second, 0.0f, -1.0);
     solver.setPriceAndAmount(defStore.getActivityDefinitions().find("relaxation")->second, 0.0f, -1.0);
-    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("unskilled labor 1")->second, -1.0, 10);
+    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("unskilled labor 1")->second, -1.5, 10);
 
-    solver.setPriceAndAmount(meal1, 1.0, 10);
-    solver.setPriceAndAmount(beer1, 1.0, 10);
+	std::map<std::shared_ptr<Commodity>, pAndA> pandas;
+	const double capacity = 2.0;
+	pandas[meal1] = { 1.0, capacity, false };
+	pandas[meal2] = { 1.0, capacity, false };
+	//pandas[meal3] = { 1.0, capacity, false };
+	pandas[beer1] = { 1.0, capacity/2.0, false };
+	pandas[beer2] = { 1.0, capacity/2.0, false };
+	//pandas[beer3] = { 1.0, capacity, false };
 
-    solver.OptimizeTimeAndPurchases2(24.0, 0.0, inv, commodityPurchases, activityPurchases);
-
-    //solver.OptimizeTimeAndPurchases(24.0, 0.0, inv, commodityPurchases, activityPurchases);
-
-
-    /*std::vector<std::shared_ptr<Producer>> prods;
-    prods.push_back(p1);
-    prods.push_back(p2);
-    //prods.push_back(p3);
-    prods.push_back(p4);
-    prods.push_back(p5);
-
-    Market market;
-
-    std::shared_ptr<Entity> e1 = std::make_shared<Entity>("Bob");
-    e1->addCurrency(0);
-
-    double wage = 0.2;
-    int count = 0;
-    while (true)
-    {
-        count++;
-        std::cout << "COUNT: -------- " << count << " --------" << std::endl;
-        for (int i = 0; i < 10; i++)
-        {
-            std::random_shuffle(prods.begin(), prods.end());
-            for (auto& p : prods)
-            {
-                p->optimizeProductionAndPrice(solver, market, e1->getCurrency());
-            }
-
-            solver.setPriceAndAmount(defStore.getActivityDefinitions().find("unskilled labor 1")->second, -wage, p1->plannedProductionAmount_ * 3);
-            solver.setPriceAndAmount(defStore.getActivityDefinitions().find("unskilled labor 2")->second, -wage, p2->plannedProductionAmount_ * 3);
-            //solver.setPriceAndAmount(defStore.getActivityDefinitions().find("unskilled labor 3")->second, -wage, p3->plannedProductionAmount_);
-            solver.setPriceAndAmount(defStore.getActivityDefinitions().find("unskilled labor 4")->second, -wage, p4->plannedProductionAmount_ * 3);
-            solver.setPriceAndAmount(defStore.getActivityDefinitions().find("unskilled labor 5")->second, -wage, p5->plannedProductionAmount_ * 3);
-        }
-
-        for (auto& p : prods)
-        {
-            p->goToMarket(market);
-            std::cout << p->getName() << ": " << p->getCurrency() << std::endl;
-        }
-
-        market.print();
-
-        std::map < std::shared_ptr<Commodity>, std::shared_ptr<TradableGood>> pmap;
-        for (auto& item : market.inventory_)
-        {
-            std::shared_ptr<TradableGood> good = item.first;
-            const std::shared_ptr<Commodity>& commodity = good->getCommodity();
-            double price = market.getSellingPrice(good);
-            double amount = item.second;
-
-            pmap[commodity] = good;
-            solver.setPriceAndAmount(commodity, price, amount);
-        }
-
-        solver.OptimizeTimeAndPurchases(24, e1->getCurrency(), inv, commodityPurchases, activityPurchases);
+	/*
+	TODO !!!
 
 
-        for (auto& purchase : activityPurchases)
-        {
-            std::cout << purchase.first->getName() << " : " << purchase.second << std::endl;
-            if (purchase.first->getName() == "Unskilled labor 1")
-            {
-                e1->addCurrency(purchase.second * 3 * wage);
-                p1->removeCurrency(purchase.second * 3 * wage);
-            }
-            else if (purchase.first->getName() == "Unskilled labor 2")
-            {
-                e1->addCurrency(purchase.second * 3 * wage);
-                p2->removeCurrency(purchase.second * 3 * wage);
-            }
-            else if (purchase.first->getName() == "Unskilled labor 3")
-            {
-                e1->addCurrency(purchase.second * 3 * wage);
-                p3->removeCurrency(purchase.second * 3 * wage);
-            }
-            else if (purchase.first->getName() == "Unskilled labor 4")
-            {
-                e1->addCurrency(purchase.second * 3 * wage);
-                p4->removeCurrency(purchase.second * 3 * wage);
-            }
-            else if (purchase.first->getName() == "Unskilled labor 5")
-            {
-                e1->addCurrency(purchase.second * 3 * wage);
-                p5->removeCurrency(purchase.second * 3 * wage);
-            }
-        }
+	each iteration
+		if sold < produced (by a margin?)
+			set amount available of sold good in solver to new amount
+			set all other products to capacity
 
-        for (auto& purchase : commodityPurchases)
-        {
-            std::cout << purchase.first->getName() << " : " << purchase.second << std::endl;
-            if (pmap.find(purchase.first) != pmap.end())
-            {
-                market.sell(pmap[purchase.first], e1, purchase.second);
-            }
-        }
+			optimize with inf money and respect labor constraints
+	*/
 
-        std::cout << e1->getCurrency() << std::endl;
-        system("pause");
-        int abe = 6;
-    }
 
-    //std::cout << std::endl;
-    */
+	for (auto& panda : pandas)
+	{
+		// set maximum amount, and arbitrary price (price constraint deactivated below)
+		solver.setPriceAndAmount(panda.first, panda.second.price, panda.second.amount);
+	}
+
+	solver.OptimizeTimeAndPurchases2(24.0, 0.0, true, inv, commodityPurchases, activityPurchases);
+
+	double labor = 0;
+	for (auto& panda : pandas)
+	{
+		//panda.second.amount = ;
+		labor += commodityPurchases.find(panda.first)->second;
+
+	}
+
+	solver.setPriceAndAmount(defStore.getActivityDefinitions().find("unskilled labor 1")->second, -2.0, labor);
+
+	std::map<std::shared_ptr<Commodity>, double> orgProfit;
+
+	orgProfit[meal1] = 0.0;
+	orgProfit[meal2] = 0.0;
+	orgProfit[meal3] = 0.0;
+	orgProfit[beer1] = 0.0;
+	orgProfit[beer2] = 0.0;
+	orgProfit[beer3] = 0.0;
+
+	std::map<std::shared_ptr<Commodity>, double> newProfit;
+
+	newProfit[meal1] = 0.0;
+	newProfit[meal2] = 0.0;
+	newProfit[meal3] = 0.0;
+	newProfit[beer1] = 0.0;
+	newProfit[beer2] = 0.0;
+	newProfit[beer3] = 0.0;
+
+	std::map<std::shared_ptr<Commodity>, double> newProfit2;
+
+	newProfit2[meal1] = 0.0;
+	newProfit2[meal2] = 0.0;
+	newProfit2[meal3] = 0.0;
+	newProfit2[beer1] = 0.0;
+	newProfit2[beer2] = 0.0;
+	newProfit2[beer3] = 0.0;
+
+	std::map<std::shared_ptr<Commodity>, pAndA> pandaGrads;
+	pandaGrads[meal1] = { 1, 1, false };
+	pandaGrads[meal2] = { 1, 1, false };
+	pandaGrads[meal3] = { 1, 1, false };
+	pandaGrads[beer1] = { 1, 1, false };
+	pandaGrads[beer2] = { 1, 1, false };
+	pandaGrads[beer3] = { 1, 1, false };
+
+	double stepSize = 1.01;
+
+	int count = 0;
+	while (true)
+	{
+		count++;
+
+		solver.OptimizeTimeAndPurchases2(24.0, 0, false, inv, commodityPurchases, activityPurchases);
+		//std::cout << "!!! " << blah << std::endl;
+		for (auto& panda : pandas)
+		{
+			double orgSold = commodityPurchases.find(panda.first)->second;
+			orgProfit[panda.first] = orgSold*panda.second.price;
+
+			solver.setPriceAndAmount(panda.first, panda.second.price*stepSize, panda.second.amount);
+		}
+		
+		solver.OptimizeTimeAndPurchases2(24.0, 0, false, inv, commodityPurchases, activityPurchases);
+
+		for (auto& panda : pandas)
+		{
+			double newSold = commodityPurchases.find(panda.first)->second;
+			newProfit[panda.first] = newSold*panda.second.price*stepSize;
+
+			solver.setPriceAndAmount(panda.first, panda.second.price, panda.second.amount);
+
+			pandaGrads[panda.first].price = newProfit[panda.first] - orgProfit[panda.first];
+		}
+
+		if (count % 100 == 0)
+		{
+			double spend = 0;
+			for (auto& purchase : commodityPurchases)
+			{
+				if (pandas.find(purchase.first) != pandas.end())
+				{
+					std::cout << purchase.first->getName() << " : " << purchase.second << " at price: " << pandas[purchase.first].price << "       ........       " << pandas[purchase.first].amount << (pandas[purchase.first].priceLocked ? " Locked" : " ...") << std::endl;
+				}
+				else
+				{
+					std::cout << purchase.first->getName() << " : " << purchase.second << " at price: " << 1.0 << std::endl;
+				}
+
+				spend += pandas[purchase.first].price * purchase.second;
+
+			}
+
+			std::cout << "SPEND: " << spend << std::endl;
+
+			for (auto& purchase : activityPurchases)
+			{
+				std::cout << purchase.first->getName() << " : " << purchase.second << std::endl;
+			}
+
+			std::cout << "ITERATION: " << count << std::endl;
+		}
+
+
+		double gradLenPrice = 0.0;
+		for (auto& grad : pandaGrads)
+		{
+			/*if (abs(grad.second.price) < abs(grad.second.amount))
+			{
+				grad.second.price = grad.second.amount;
+			}*/
+
+			gradLenPrice += grad.second.price * grad.second.price;
+			
+		}
+
+		gradLenPrice = sqrt(gradLenPrice);
+
+		// update solver for next iteration
+		
+		for (auto& panda : pandas)
+		{
+			
+			pandaGrads[panda.first].price /= gradLenPrice;
+				
+			if (panda.second.price + pandaGrads[panda.first].price*(stepSize - 1.0) > 1.0 && !panda.second.priceLocked)
+			{
+				panda.second.price += pandaGrads[panda.first].price*(stepSize - 1.0);
+			}
+			else
+			{
+				panda.second.price = 1.0;
+			}
+		}
+
+		//system("pause");
+	}
+
+    
     system("pause");
     return 0;
 }
