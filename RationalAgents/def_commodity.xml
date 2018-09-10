@@ -8,10 +8,7 @@
         <id>food</id>
         <amount>1.0</amount>
       </utility>
-      <utility>
-        <id>drink</id>
-        <amount>0.1</amount>
-      </utility>
+      
     </utilities>
   </commodity>
   <commodity>
@@ -25,10 +22,21 @@
       </utility>
       <utility>
         <id>drink</id>
+        <amount>0.9</amount>
+      </utility>
+    </utilities>
+  </commodity>
+  <commodity>
+    <id>luxuries</id>
+    <name>Luxuries</name>
+    <description>bling</description>
+    <utilities>
+      <utility>
+        <id>luxuries</id>
         <amount>1.0</amount>
       </utility>
     </utilities>
-  </commodity> 
+  </commodity>
   <commodity>
     <id>savings</id>
     <name>Savings</name>

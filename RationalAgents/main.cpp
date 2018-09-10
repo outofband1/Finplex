@@ -19,237 +19,429 @@
 
 #include "lp_lib.h"
 
-struct pAndA
+class UtilExp
 {
-	double price;
-	double amount;
-	bool priceLocked;
+public:
+
+    void setCurve(const double& max, const double& saturationAmount, const double& saturationDegree)
+    {
+        // solve max(1-e^saturationAmount*x)=saturationDegree*max)
+        max_ = max;
+        coefficient_ = log(-saturationDegree + 1);
+        coefficient_ /= saturationAmount;
+    }
+
+    double getUtility(const double& amount) const
+    {
+        double u = max_ * (1.0 - exp(coefficient_ * amount));
+        return u;
+    }
+
+    double getMarginalUtility(const double& amount) const
+    {
+        double mu = max_ * -coefficient_ * exp(coefficient_ * amount);
+        return mu;
+    }
+
+    double getAmountFromMU(const double& targetMU)
+    {
+        double res = log(-targetMU  / (max_ * coefficient_)) / coefficient_;
+        return res;
+    }
+
+private:
+    double max_;
+    double coefficient_;
+};
+
+class Basket
+{
+public:
+    void setProductAmount(const std::shared_ptr<UtilExp>& product, const double& amount)
+    {
+        products[product] = amount;
+    }
+
+    double getMarginalUtility(const std::shared_ptr<UtilExp>& product)
+    {
+        auto& it = products.find(product);
+
+        if (it != products.end())
+        {
+            return product->getMarginalUtility(it->second);
+        }
+        else
+        {
+            return product->getMarginalUtility(0.0);
+        }
+    }
+
+private:
+    std::map <std::shared_ptr<UtilExp>, double> products;
+
+};
+
+
+class ProductExp
+{
+public:
+    ProductExp(const std::string& name, const bool& isActivity)
+    {
+        name_ = name;
+        isActivity_ = isActivity;
+    }
+
+    void setUtility(const std::shared_ptr<UtilExp>& utility, const double& weight)
+    {
+        utilities[utility] = weight;
+    }
+
+    const std::map<std::shared_ptr<UtilExp>, double>& getUtilities() const
+    {
+        return utilities;
+    }
+
+    void setInput(const std::shared_ptr<ProductExp>& product, const double& amount)
+    {
+        inputProducts_[product] = amount;
+    }
+
+    const std::map<std::shared_ptr<ProductExp>, double>& getInputs() const
+    {
+        return inputProducts_;
+    }
+
+    bool isActivity() const
+    {
+        return isActivity_;
+    }
+
+    const std::string& getName() const
+    {
+        return name_;
+    }
+
+private:
+    std::map <std::shared_ptr<UtilExp>, double> utilities;
+    std::map <std::shared_ptr<ProductExp>, double> inputProducts_;
+
+
+    std::string name_;
+
+    bool isActivity_;
+};
+
+class OptimizerExp
+{
+public:
+    void setSleepUtility(const std::shared_ptr<UtilExp>& sleepUtil)
+    {
+        sleepUtil_ = sleepUtil;
+    }
+
+    void addProduct(const std::shared_ptr<ProductExp>& product, const double& capacity, const double& minPrice)
+    {
+        PriceAndAmount newPanda;
+        newPanda.amount_ = capacity;
+        newPanda.minPrice_ = minPrice;
+        newPanda.price_ = 0.0;
+        newPanda.mu_ = 0.0;
+        newPanda.inputCost_ = 0.0;
+        newPanda.reservedAmount_ = 0.0;
+
+        sleepAmount_ = 0.0;
+
+        pandas_[product] = newPanda;
+    }
+
+    void optimize(const double& hours)
+    {
+        sleepAmount_ = hours;
+
+        refreshUtilities();
+
+        double balance = -1.0;
+
+        // initialize sub resources amounts (circular dependencies must be avoided?)
+        refreshReservedAmounts();
+
+        // initialize minimum prices from time and price of sub resources
+
+        double sleepMu = sleepUtil_->getMarginalUtility(sleepAmount_);
+        do
+        {
+            double spend = 0.0;
+            bool updateSleep = true;
+            for (auto& panda : pandas_)
+            {
+                if (panda.first->isActivity())
+                {
+                    panda.second.price_ = (panda.second.mu_ - sleepMu) / sleepMu;
+                    spend += 1.0 * panda.second.amount_;
+                }
+                else
+                {
+                    panda.second.price_ = panda.second.mu_ / sleepMu;
+                }
+
+                if (panda.second.price_ < panda.second.minPrice_ + panda.second.inputCost_ - 10E-6)
+                {
+                    panda.second.amount_ *= 0.999;
+                    // update sub resources amounts
+                    // this lowers price of sub-product and thereby minimum price of primary product
+                    refreshReservedAmounts();
+
+                    // a lower minimum price of primary product increases demand of primary product. Will it balance?
+                    updateSleep = false;
+                }
+            }
+
+            if (!updateSleep)
+            {
+                refreshUtilities();
+
+                for (auto& panda : pandas_)
+                {
+                    if (panda.first->isActivity())
+                    {
+                        panda.second.price_ = (panda.second.mu_ - sleepMu) / sleepMu;
+                        //spend += 1.0 * panda.second.amount_;
+                    }
+                    else
+                    {
+                        panda.second.price_ = panda.second.mu_ / sleepMu;
+                    }
+                }
+
+                // recalculate minimum prices from time and price of sub resources
+                refreshReservedAmounts();
+            }
+            else
+            {
+                for (auto& panda : pandas_)
+                {
+                    spend += panda.second.price_ * (panda.second.amount_ - panda.second.reservedAmount_);
+                }
+
+                balance = hours - sleepAmount_ - spend;
+                sleepAmount_ *= 0.999;
+                sleepMu = sleepUtil_->getMarginalUtility(sleepAmount_);
+            }
+        }
+        while (balance < 0);
+
+
+        int uhuh = 0;
+    }
+
+    void print()
+    {
+        double totalSpend = 0.0;
+
+        for (auto& panda : pandas_)
+        {
+            std::cout << panda.first->getName() << ":" << std::endl;
+            std::cout << panda.second.amount_ - panda.second.reservedAmount_ << " at price: " << panda.second.price_ << std::endl;
+            std::cout << panda.second.mu_ / panda.second.price_ << std::endl << std::endl;
+
+            totalSpend += (panda.second.amount_ - panda.second.reservedAmount_) * panda.second.price_;
+        }
+
+        std::cout << "Total spend: " << totalSpend << std::endl << std::endl;
+
+        double sleepMu = sleepUtil_->getMarginalUtility(sleepAmount_);
+        std::cout << "while sleeping for: " << sleepAmount_ << " hours. at MU: " << sleepMu << std::endl;
+    }
+
+private:
+    struct PriceAndAmount
+    {
+        double minPrice_;
+        double price_;
+        double amount_;
+        double reservedAmount_;
+        double inputCost_;
+        double mu_;
+    };
+
+    void refreshInputCosts()
+    {
+
+    }
+
+    void refreshReservedAmounts()
+    {
+        for (auto& panda : pandas_)
+        {
+            panda.second.reservedAmount_ = 0.0;
+            for (auto& input : panda.first->getInputs())
+            {
+                double reservedAmount = input.second * panda.second.amount_;
+                auto& inputProduct = pandas_.find(input.first);
+                inputProduct->second.reservedAmount_ += reservedAmount;
+            }
+        }
+
+        for (auto& panda : pandas_)
+        {
+            panda.second.inputCost_ = 0.0;
+            for (auto& input : panda.first->getInputs())
+            {
+                double reservedAmount = input.second * panda.second.amount_;
+                auto& inputProduct = pandas_.find(input.first);
+                panda.second.inputCost_ += inputProduct->second.price_;
+            }
+
+        }
+
+
+    }
+
+    void refreshUtilities()
+    {
+        calculateUtilityAmounts();
+
+        for (auto& panda2 : pandas_)
+        {
+            panda2.second.mu_ = getMarginalUtility(panda2.first);
+        }
+    }
+
+    void calculateUtilityAmounts()
+    {
+        utilityAmounts_.clear();
+        for (auto& panda : pandas_)
+        {
+            double amount = panda.second.amount_ - panda.second.reservedAmount_;
+            for (auto& util : panda.first->getUtilities())
+            {
+                double weight = util.second;
+                auto& utilityAmount = utilityAmounts_.find(util.first);
+                if (utilityAmount != utilityAmounts_.end())
+                {
+                    utilityAmount->second += weight * amount;
+                }
+                else
+                {
+                    utilityAmounts_[util.first] = weight * amount;
+                }
+
+            }
+        }
+    }
+
+    double getMarginalUtility(const std::shared_ptr<ProductExp>& product) const
+    {
+        double mu = 0.0;
+        for (const auto& util : product->getUtilities())
+        {
+            auto& it = utilityAmounts_.find(util.first);
+            double utilityAmount = it->second;
+            mu += util.second * util.first->getMarginalUtility(utilityAmount);
+        }
+
+        return mu;
+    }
+
+    std::shared_ptr<UtilExp> sleepUtil_;
+
+    std::map<std::shared_ptr<ProductExp>, PriceAndAmount> pandas_;
+
+    std::map <std::shared_ptr<UtilExp>, double> utilityAmounts_;
+
+    double sleepAmount_;
 };
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-    PurchaseSolver pSolver;
+    std::shared_ptr<UtilExp> uFood = std::make_shared<UtilExp>();
+    uFood->setCurve(10, 3, 0.95);
 
-    DefinitionStorage defStore;
-    defStore.readDefinitions();
+    std::shared_ptr<UtilExp> uDrink = std::make_shared<UtilExp>();
+    uDrink->setCurve(10, 3, 0.95);
 
-    PurchaseSolver solver;
+    std::shared_ptr<UtilExp> uSleep = std::make_shared<UtilExp>();
+    uSleep->setCurve(10, 8, 0.95);
 
-    for (auto& utility : defStore.getUtilityDefinitions())
+    std::shared_ptr<UtilExp> uRelax = std::make_shared<UtilExp>();
+    uRelax->setCurve(1, 2, 0.95);
+
+    std::shared_ptr<ProductExp> meal1 = std::make_shared<ProductExp>("Meal 1", false);
+    meal1->setUtility(uFood, 1.0);
+
+    std::shared_ptr<ProductExp> meal2 = std::make_shared<ProductExp>("Meal 2", false);
+    meal2->setUtility(uFood, 1.0);
+
+    std::shared_ptr<ProductExp> beer1 = std::make_shared<ProductExp>("Beer 1", false);
+    beer1->setUtility(uFood, 0.1);
+    beer1->setUtility(uDrink, 0.9);
+
+    std::shared_ptr<ProductExp> relax1 = std::make_shared<ProductExp>("Relax 1", true);
+    relax1->setUtility(uRelax, 1.0);
+    relax1->setInput(beer1, 1.0);
+
+    OptimizerExp opt;
+    opt.setSleepUtility(uSleep);
+    opt.addProduct(meal1, 3, 2.0);
+    opt.addProduct(meal2, 2, 2.0);
+    opt.addProduct(beer1, 4, 2.0);
+    opt.addProduct(relax1, 2, 2.0);
+
+    opt.optimize(24.0);
+
+    opt.print();
+
+    /*UtilExp food;
+    food.setCurve(6, 3, 0.95);
+
+    UtilExp drink;
+    drink.setCurve(10, 3, 0.95);
+
+    UtilExp sleep;
+    sleep.setCurve(6, 8, 0.95);
+
+    UtilExp relax;
+    relax.setCurve(6, 3, 0.95);
+
+
+    double s = 24;
+    double balance = -1;
+
+    double dAmount = 4;
+
+    while (true)
     {
-        solver.registerUtility(utility.second);
-    }
+        double foodMu = food.getMarginalUtility(3);
+        double drinkMu = drink.getMarginalUtility(4);
+        double relaxMu = relax.getMarginalUtility(3);
+        double sleepMu = sleep.getMarginalUtility(s);
 
-    std::shared_ptr<Commodity> meal1 = std::make_shared<Commodity>(*(defStore.getCommodityDefinitions().find("meal")->second));
-    meal1->setName("m1");
-    std::shared_ptr<Producer> p1 = std::make_shared<Producer>("Meal Producer 1", meal1);
-    p1->addCurrency(1000.0);
+        double sleepPrice = 1;
+        double relaxPrice = (relaxMu - sleepMu) / sleepMu;
+        double foodPrice = foodMu / sleepMu;
+        double drinkPrice = drinkMu / sleepMu;
 
-    std::shared_ptr<Commodity> meal2 = std::make_shared<Commodity>(*(defStore.getCommodityDefinitions().find("meal")->second));
-    meal2->setName("m2");
-    std::shared_ptr<Producer> p2 = std::make_shared<Producer>("Meal Producer 2", meal2);
-    p2->addCurrency(1000.0);
+        //         if (drinkPrice < 2.0 - 10E-6)
+        //         {
+        //             dAmount = drink.getAmountFromMU(2.0 * sleepMu);
+        //         }
+        //         else
+        //         {
+        balance = (24 - s - 3) - relaxPrice - 3 * foodPrice - 4 * drinkPrice;
 
-    std::shared_ptr<Commodity> meal3 = std::make_shared<Commodity>(*(defStore.getCommodityDefinitions().find("meal")->second));
-    meal3->setName("m3");
-    std::shared_ptr<Producer> p3 = std::make_shared<Producer>("Meal Producer 3", meal3);
-    p3->addCurrency(1000.0);
-
-    std::shared_ptr<Commodity> beer1 = std::make_shared<Commodity>(*(defStore.getCommodityDefinitions().find("beer")->second));
-    beer1->setName("b1");
-    std::shared_ptr<Producer> p4 = std::make_shared<Producer>("Beer Producer 1", beer1);
-    p4->addCurrency(1000.0);
-
-    std::shared_ptr<Commodity> beer2 = std::make_shared<Commodity>(*(defStore.getCommodityDefinitions().find("beer")->second));
-    beer2->setName("b2");
-    std::shared_ptr<Producer> p5 = std::make_shared<Producer>("Beer Producer 2", beer2);
-    p5->addCurrency(1000.0);
-
-	std::shared_ptr<Commodity> beer3 = std::make_shared<Commodity>(*(defStore.getCommodityDefinitions().find("beer")->second));
-	beer3->setName("b3");
-	
-	
-
-    Inventory inv;
-
-    std::map<std::shared_ptr<Commodity>, double> commodityPurchases;
-    std::map<std::shared_ptr<Activity>, double> activityPurchases;
-
-    //solver.setPriceAndAmount(defStore.getCommodityDefinitions().find("savings")->second, 1.0f, -1.0);
-    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("leisure")->second, 0.2f, 3.0);
-    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("sleep")->second, 0.0f, -1.0);
-    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("relaxation")->second, 0.0f, -1.0);
-    solver.setPriceAndAmount(defStore.getActivityDefinitions().find("unskilled labor 1")->second, -1.5, 10);
-
-	std::map<std::shared_ptr<Commodity>, pAndA> pandas;
-	const double capacity = 2.0;
-	pandas[meal1] = { 1.0, capacity, false };
-	pandas[meal2] = { 1.0, capacity, false };
-	//pandas[meal3] = { 1.0, capacity, false };
-	pandas[beer1] = { 1.0, capacity/2.0, false };
-	pandas[beer2] = { 1.0, capacity/2.0, false };
-	//pandas[beer3] = { 1.0, capacity, false };
-
-	/*
-	TODO !!!
+        double a = foodMu / foodPrice;
+        double b = drinkMu / drinkPrice;
+        double c = sleepMu / sleepPrice;
+        double d = relaxMu / relaxPrice;
 
 
-	each iteration
-		if sold < produced (by a margin?)
-			set amount available of sold good in solver to new amount
-			set all other products to capacity
+        s -= 0.01;
 
-			optimize with inf money and respect labor constraints
-	*/
+        //        }
+    }*/
 
-
-	for (auto& panda : pandas)
-	{
-		// set maximum amount, and arbitrary price (price constraint deactivated below)
-		solver.setPriceAndAmount(panda.first, panda.second.price, panda.second.amount);
-	}
-
-	solver.OptimizeTimeAndPurchases2(24.0, 0.0, true, inv, commodityPurchases, activityPurchases);
-
-	double labor = 0;
-	for (auto& panda : pandas)
-	{
-		//panda.second.amount = ;
-		labor += commodityPurchases.find(panda.first)->second;
-
-	}
-
-	solver.setPriceAndAmount(defStore.getActivityDefinitions().find("unskilled labor 1")->second, -2.0, labor);
-
-	std::map<std::shared_ptr<Commodity>, double> orgProfit;
-
-	orgProfit[meal1] = 0.0;
-	orgProfit[meal2] = 0.0;
-	orgProfit[meal3] = 0.0;
-	orgProfit[beer1] = 0.0;
-	orgProfit[beer2] = 0.0;
-	orgProfit[beer3] = 0.0;
-
-	std::map<std::shared_ptr<Commodity>, double> newProfit;
-
-	newProfit[meal1] = 0.0;
-	newProfit[meal2] = 0.0;
-	newProfit[meal3] = 0.0;
-	newProfit[beer1] = 0.0;
-	newProfit[beer2] = 0.0;
-	newProfit[beer3] = 0.0;
-
-	std::map<std::shared_ptr<Commodity>, double> newProfit2;
-
-	newProfit2[meal1] = 0.0;
-	newProfit2[meal2] = 0.0;
-	newProfit2[meal3] = 0.0;
-	newProfit2[beer1] = 0.0;
-	newProfit2[beer2] = 0.0;
-	newProfit2[beer3] = 0.0;
-
-	std::map<std::shared_ptr<Commodity>, pAndA> pandaGrads;
-	pandaGrads[meal1] = { 1, 1, false };
-	pandaGrads[meal2] = { 1, 1, false };
-	pandaGrads[meal3] = { 1, 1, false };
-	pandaGrads[beer1] = { 1, 1, false };
-	pandaGrads[beer2] = { 1, 1, false };
-	pandaGrads[beer3] = { 1, 1, false };
-
-	double stepSize = 1.01;
-
-	int count = 0;
-	while (true)
-	{
-		count++;
-
-		solver.OptimizeTimeAndPurchases2(24.0, 0, false, inv, commodityPurchases, activityPurchases);
-		//std::cout << "!!! " << blah << std::endl;
-		for (auto& panda : pandas)
-		{
-			double orgSold = commodityPurchases.find(panda.first)->second;
-			orgProfit[panda.first] = orgSold*panda.second.price;
-
-			solver.setPriceAndAmount(panda.first, panda.second.price*stepSize, panda.second.amount);
-		}
-		
-		solver.OptimizeTimeAndPurchases2(24.0, 0, false, inv, commodityPurchases, activityPurchases);
-
-		for (auto& panda : pandas)
-		{
-			double newSold = commodityPurchases.find(panda.first)->second;
-			newProfit[panda.first] = newSold*panda.second.price*stepSize;
-
-			solver.setPriceAndAmount(panda.first, panda.second.price, panda.second.amount);
-
-			pandaGrads[panda.first].price = newProfit[panda.first] - orgProfit[panda.first];
-		}
-
-		if (count % 100 == 0)
-		{
-			double spend = 0;
-			for (auto& purchase : commodityPurchases)
-			{
-				if (pandas.find(purchase.first) != pandas.end())
-				{
-					std::cout << purchase.first->getName() << " : " << purchase.second << " at price: " << pandas[purchase.first].price << "       ........       " << pandas[purchase.first].amount << (pandas[purchase.first].priceLocked ? " Locked" : " ...") << std::endl;
-				}
-				else
-				{
-					std::cout << purchase.first->getName() << " : " << purchase.second << " at price: " << 1.0 << std::endl;
-				}
-
-				spend += pandas[purchase.first].price * purchase.second;
-
-			}
-
-			std::cout << "SPEND: " << spend << std::endl;
-
-			for (auto& purchase : activityPurchases)
-			{
-				std::cout << purchase.first->getName() << " : " << purchase.second << std::endl;
-			}
-
-			std::cout << "ITERATION: " << count << std::endl;
-		}
-
-
-		double gradLenPrice = 0.0;
-		for (auto& grad : pandaGrads)
-		{
-			/*if (abs(grad.second.price) < abs(grad.second.amount))
-			{
-				grad.second.price = grad.second.amount;
-			}*/
-
-			gradLenPrice += grad.second.price * grad.second.price;
-			
-		}
-
-		gradLenPrice = sqrt(gradLenPrice);
-
-		// update solver for next iteration
-		
-		for (auto& panda : pandas)
-		{
-			
-			pandaGrads[panda.first].price /= gradLenPrice;
-				
-			if (panda.second.price + pandaGrads[panda.first].price*(stepSize - 1.0) > 1.0 && !panda.second.priceLocked)
-			{
-				panda.second.price += pandaGrads[panda.first].price*(stepSize - 1.0);
-			}
-			else
-			{
-				panda.second.price = 1.0;
-			}
-		}
-
-		//system("pause");
-	}
-
-    
     system("pause");
+
     return 0;
 }
 

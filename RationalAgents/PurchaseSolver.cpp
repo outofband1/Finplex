@@ -310,12 +310,12 @@ void PurchaseSolver::OptimizeTimeAndPurchases(const double& time, const double& 
 
 double PurchaseSolver::OptimizeTimeAndPurchases2(const double& time, const double& savings, const bool& laborConstraints, const Inventory& inventory, std::map<std::shared_ptr<Commodity>, double>& commodityPurchases, std::map<std::shared_ptr<Activity>, double>& activityPurchases) const
 {
-	commodityPurchases.clear();
-	activityPurchases.clear();
+    commodityPurchases.clear();
+    activityPurchases.clear();
 
-	std::vector<std::shared_ptr<Commodity>> comOrderAdded;
-	std::vector<std::shared_ptr<Activity>> actOrderAdded;
-	int constraintCount = 0;
+    std::vector<std::shared_ptr<Commodity>> comOrderAdded;
+    std::vector<std::shared_ptr<Activity>> actOrderAdded;
+    int constraintCount = 0;
 
     size_t utilitySourceCount = commodityAmountsAndPrices_.size() + activityAmountsAndPrices_.size();
     size_t utilityCount = utilities_.size();
@@ -329,7 +329,7 @@ double PurchaseSolver::OptimizeTimeAndPurchases2(const double& time, const doubl
         throw;
     }
 
-	set_verbose(lp, NEUTRAL);
+    set_verbose(lp, NEUTRAL);
 
     std::map < std::pair<std::shared_ptr<Utility>, int>, std::vector<double>> vals;
     std::map < std::pair<std::shared_ptr<Utility>, int>, std::vector<int>> cols;
@@ -340,8 +340,8 @@ double PurchaseSolver::OptimizeTimeAndPurchases2(const double& time, const doubl
     std::vector<int> moneyConstraintCols;
     std::vector<double> moneyConstraintVals;
 
-	std::vector<int> laborConstraintCols;
-	std::vector<double> laborConstraintVals;
+    std::vector<int> laborConstraintCols;
+    std::vector<double> laborConstraintVals;
 
     set_maxim(lp);
     char name[256];
@@ -353,7 +353,7 @@ double PurchaseSolver::OptimizeTimeAndPurchases2(const double& time, const doubl
         strncpy_s(name, commodity.first->getName().c_str(), 255);
         set_col_name(lp, colIndex, name);
 
-		comOrderAdded.push_back(commodity.first);
+        comOrderAdded.push_back(commodity.first);
 
         if (amount >= 0)
         {
@@ -389,8 +389,8 @@ double PurchaseSolver::OptimizeTimeAndPurchases2(const double& time, const doubl
             moneyConstraintVals.push_back(commodity.second.price_);
         }
 
-		laborConstraintCols.push_back(colIndex);
-		laborConstraintVals.push_back(1.0);
+        laborConstraintCols.push_back(colIndex);
+        laborConstraintVals.push_back(1.0);
 
         colIndex++;
     }
@@ -402,7 +402,7 @@ double PurchaseSolver::OptimizeTimeAndPurchases2(const double& time, const doubl
         strncpy_s(name, activity.first->getName().c_str(), 255);
         set_col_name(lp, colIndex, name);
 
-		actOrderAdded.push_back(activity.first);
+        actOrderAdded.push_back(activity.first);
 
         if (amount >= 0)
         {
@@ -441,12 +441,12 @@ double PurchaseSolver::OptimizeTimeAndPurchases2(const double& time, const doubl
             moneyConstraintCols.push_back(colIndex);
             moneyConstraintVals.push_back(activity.second.price_);
         }
-		
-		if (activity.second.price_ < -10E-6)
-		{
-			laborConstraintCols.push_back(colIndex);
-			laborConstraintVals.push_back(-1.0);
-		}
+
+        if (activity.second.price_ < -10E-6)
+        {
+            laborConstraintCols.push_back(colIndex);
+            laborConstraintVals.push_back(-1.0);
+        }
 
         colIndex++;
     }
@@ -469,7 +469,7 @@ double PurchaseSolver::OptimizeTimeAndPurchases2(const double& time, const doubl
             vals[p].push_back(1);
 
             add_constraintex(lp, cols[p].size(), vals[p].data(), cols[p].data(), LE, intercept);
-			constraintCount += 1;
+            constraintCount += 1;
 
             pieceIndex++;
         }
@@ -478,53 +478,58 @@ double PurchaseSolver::OptimizeTimeAndPurchases2(const double& time, const doubl
     }
 
     add_constraintex(lp, timeConstraintCols.size(), timeConstraintVals.data(), timeConstraintCols.data(), EQ, time);
-	constraintCount += 1;
+    constraintCount += 1;
 
-	if (savings >= 0)
-	{
-		add_constraintex(lp, moneyConstraintCols.size(), moneyConstraintVals.data(), moneyConstraintCols.data(), LE, savings);
-		constraintCount += 1;
-	}
-    
+    if (savings >= 0)
+    {
+        add_constraintex(lp, moneyConstraintCols.size(), moneyConstraintVals.data(), moneyConstraintCols.data(), LE, savings);
+        constraintCount += 1;
+    }
 
-	if (laborConstraints)
-	{
-		add_constraintex(lp, laborConstraintCols.size(), laborConstraintVals.data(), laborConstraintCols.data(), EQ, 0);
-		constraintCount += 1;
-	}
-	
 
-    //print_lp(lp);
+    if (laborConstraints)
+    {
+        add_constraintex(lp, laborConstraintCols.size(), laborConstraintVals.data(), laborConstraintCols.data(), EQ, 0);
+        constraintCount += 1;
+    }
 
-	int status = solve(lp);
 
-	if (status != OPTIMAL)
-	{
-		throw;
-	}
+    print_lp(lp);
 
-	REAL* ptr_pv;
-	get_ptr_primal_solution(lp, &ptr_pv);
+    int status = solve(lp);
 
-	for (size_t i = 0; i < comOrderAdded.size(); i++)
-	{
-		//std::cout << ptr_pv[constraintCount+1+i] << std::endl;
-		commodityPurchases.insert(std::make_pair(comOrderAdded[i], ptr_pv[constraintCount + 1 + i]));
-	}
+    if (status != OPTIMAL)
+    {
+        throw;
+    }
 
-	for (size_t i = 0; i < actOrderAdded.size(); i++)
-	{
-		//std::cout << ptr_pv[comOrderAdded.size()+constraintCount + 1 + i] << std::endl;
-		activityPurchases.insert(std::make_pair(actOrderAdded[i], ptr_pv[comOrderAdded.size() + constraintCount + 1 + i]));
-	}
+    REAL* ptr_pv;
+    get_ptr_primal_solution(lp, &ptr_pv);
 
-    //print_solution(lp, 1);
+    for (size_t i = 0; i < comOrderAdded.size(); i++)
+    {
+        //std::cout << ptr_pv[constraintCount+1+i] << std::endl;
+        commodityPurchases.insert(std::make_pair(comOrderAdded[i], ptr_pv[constraintCount + 1 + i]));
+    }
 
-	//print_duals(lp);
+    for (size_t i = 0; i < actOrderAdded.size(); i++)
+    {
+        //std::cout << ptr_pv[comOrderAdded.size()+constraintCount + 1 + i] << std::endl;
+        activityPurchases.insert(std::make_pair(actOrderAdded[i], ptr_pv[comOrderAdded.size() + constraintCount + 1 + i]));
+    }
 
-	return ptr_pv[0];
+    print_solution(lp, 1);
 
-	//free_lp(&lp);
+    //print_duals(lp);
+
+
+
+    //free_lp(&lp);
+
+    double tmp = ptr_pv[0];
+
 
     delete_lp(lp);
+
+    return tmp;
 }
