@@ -136,7 +136,7 @@ class OptimizerExp
 public:
     void setSleepUtility(const std::shared_ptr<UtilExp>& sleepUtil)
     {
-        sleepUtil_ = sleepUtil;
+        sleepUtil_ = 1.0 * sleepUtil;
     }
 
     void addProduct(const std::shared_ptr<ProductExp>& product, const double& capacity, const double& minPrice)
