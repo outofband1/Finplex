@@ -16,7 +16,7 @@
 
 1. have producers interact with the optimizer
     a. just fixed production and labour
-    b. use optimizer to determine if labour should be increased
+    b. use solver to determine if labour should be increased
         * step 2 -> compete for labour by adjusting wage if needed
 
 Questions:
@@ -52,6 +52,16 @@ public:
 
         std::map<std::shared_ptr<CommodityInstance>, market_solver::Result> results;
         solver.findPurchases(population, totalBudget, false, results);
+
+        for (auto& result : results)
+        {
+            auto& producer = commodityProducers_[result.first];
+
+            double amount = result.second.getAmountSold();
+            double price = result.second.getPrice();
+
+            producer->setCurrentMaxSalesAndPrice(amount, price);
+        }
 
         market_solver::printResults(results);
     }

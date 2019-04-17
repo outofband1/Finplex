@@ -17,10 +17,15 @@ public:
     double getCapacity() const;
     double getMinimumSellingPrice() const;
 
+    void setCurrentMaxSalesAndPrice(const double maxSales, const double maxPrice);
+
 private:
     std::shared_ptr<CommodityInstance> commodityInstance_;
 
     // tmp
-    double currentCapacity_ = 1;
+    //double currentCapacity_ = 1;
+
+    double currentMaxSales_;
+    double currentMaxPrice_;
 
 };

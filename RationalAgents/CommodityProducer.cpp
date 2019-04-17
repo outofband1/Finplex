@@ -33,3 +33,9 @@ double CommodityProducer::getMinimumSellingPrice() const
     double hourlyWage = 10.0;
     return fop.getLabour() * hourlyWage;
 }
+
+void CommodityProducer::setCurrentMaxSalesAndPrice(const double maxSales, const double maxPrice)
+{
+    currentMaxSales_ = maxSales;
+    currentMaxPrice_ = maxPrice;
+}

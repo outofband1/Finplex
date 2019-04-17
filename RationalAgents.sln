@@ -4,11 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RationalAgents", "RationalAgents\RationalAgents.vcxproj", "{3E797AD4-0C75-4A9D-82A7-7F8AB42E5727}"
-	ProjectSection(ProjectDependencies) = postProject
-		{AEDD8A5B-DFA6-4995-9E9E-EB381C34CEAF} = {AEDD8A5B-DFA6-4995-9E9E-EB381C34CEAF}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liblpsolve55", "lp_solve_5.5\lib.vcxproj", "{AEDD8A5B-DFA6-4995-9E9E-EB381C34CEAF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,14 +21,6 @@ Global
 		{3E797AD4-0C75-4A9D-82A7-7F8AB42E5727}.Release|Win32.Build.0 = Release|Win32
 		{3E797AD4-0C75-4A9D-82A7-7F8AB42E5727}.Release|x64.ActiveCfg = Release|x64
 		{3E797AD4-0C75-4A9D-82A7-7F8AB42E5727}.Release|x64.Build.0 = Release|x64
-		{AEDD8A5B-DFA6-4995-9E9E-EB381C34CEAF}.Debug|Win32.ActiveCfg = Debug|Win32
-		{AEDD8A5B-DFA6-4995-9E9E-EB381C34CEAF}.Debug|Win32.Build.0 = Debug|Win32
-		{AEDD8A5B-DFA6-4995-9E9E-EB381C34CEAF}.Debug|x64.ActiveCfg = Debug|x64
-		{AEDD8A5B-DFA6-4995-9E9E-EB381C34CEAF}.Debug|x64.Build.0 = Debug|x64
-		{AEDD8A5B-DFA6-4995-9E9E-EB381C34CEAF}.Release|Win32.ActiveCfg = Release|Win32
-		{AEDD8A5B-DFA6-4995-9E9E-EB381C34CEAF}.Release|Win32.Build.0 = Release|Win32
-		{AEDD8A5B-DFA6-4995-9E9E-EB381C34CEAF}.Release|x64.ActiveCfg = Release|x64
-		{AEDD8A5B-DFA6-4995-9E9E-EB381C34CEAF}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
