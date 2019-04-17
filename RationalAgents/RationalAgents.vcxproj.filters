@@ -15,16 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Utility.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Commodity.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PurchaseSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="tinyxml2.cpp">
@@ -33,72 +24,63 @@
     <ClCompile Include="DefinitionStorage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UtilitySource.cpp">
+    <ClCompile Include="utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Activity.cpp">
+    <ClCompile Include="Good.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Definition.cpp">
+    <ClCompile Include="Commodity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Inventory.cpp">
+    <ClCompile Include="CommodityInstance.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Producer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Market.cpp">
+    <ClCompile Include="CommodityProducer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TradableGood.cpp">
+    <ClCompile Include="FactorsOfProduction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Entity.cpp">
+    <ClCompile Include="MarketSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Simplex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utility.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Commodity.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PurchaseSolver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="tinyxml2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DefinitionStorage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Activity.h">
+    <ClInclude Include="utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UtilitySource.h">
+    <ClInclude Include="good.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Definition.h">
+    <ClInclude Include="Commodity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Inventory.h">
+    <ClInclude Include="Exceptions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CommodityInstance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Producer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Market.h">
+    <ClInclude Include="CommodityProducer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TradableGood.h">
+    <ClInclude Include="FactorsOfProduction.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Entity.h">
+    <ClInclude Include="MarketSolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

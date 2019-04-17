@@ -1,32 +1,16 @@
 #pragma once
+#include <string>
 
-#include <memory>
-
-#include "Inventory.h"
-#include "Entity.h"
-
-class PurchaseSolver;
-class Commodity;
-class Market;
-
-class Producer : public Entity
+class Producer
 {
 public:
-    Producer(const std::string& name, const std::shared_ptr<Commodity>& product);
+    Producer(const std::string& name);
 
-    void optimizeProductionAndPrice(PurchaseSolver& purchaseSolver, const Market& market, double blah);
-    void goToMarket(Market &market);
-
-    const double& getCapacity() const;
-
-    const std::shared_ptr<TradableGood>& getProduct() const;
-
-    double plannedProductionAmount_;
-    double plannedPrice_;
-    double plannedWage_;
+    const std::string& getName() const;
 private:
+    std::string name_;
 
-    double capacity_;
+    //int labourCapacity_;
 
-    std::shared_ptr<TradableGood> product_;
+    // owner
 };

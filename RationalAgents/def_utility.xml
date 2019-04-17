@@ -4,18 +4,9 @@
 		<name>Food</name>
     <description>Food is yummy and you will die if you don't have it!.</description>
     <curve>
-      <piece>
-        <slope>3.5</slope>
-        <intercept>0</intercept>
-      </piece>
-      <piece>
-        <slope>1</slope>
-        <intercept>5</intercept>
-      </piece>
-      <piece>
-        <slope>0.001</slope>
-        <intercept>8</intercept>
-      </piece>
+      <maximum>10</maximum>
+      <saturation>3</saturation>
+      <degree>0.95</degree>
     </curve>
 	</utility>
   <utility>
@@ -23,78 +14,19 @@
     <name>Drink</name>
     <description>Cheers!</description>
     <curve>
-      <piece>
-        <slope>3.5</slope>
-        <intercept>0</intercept>
-      </piece>
-      <piece>
-        <slope>1.2</slope>
-        <intercept>5.5</intercept>
-      </piece>
-      <piece>
-        <slope>0.001</slope>
-        <intercept>10</intercept>
-      </piece>
+      <maximum>10</maximum>
+      <saturation>3</saturation>
+      <degree>0.95</degree>
     </curve>
   </utility>
   <utility>
     <id>luxuries</id>
-    <name>Luxuries</name>
-    <description>Bling Bling!</description>
-    <curve>
-      <piece>
-        <slope>3.5</slope>
-        <intercept>0</intercept>
-      </piece>
-      <piece>
-        <slope>1.1</slope>
-        <intercept>5</intercept>
-      </piece>
-      <piece>
-        <slope>0.001</slope>
-        <intercept>8</intercept>
-      </piece>
-    </curve>
-  </utility>
-  <utility>
-    <id>savings</id>
-    <name>Save</name>
-    <description>are very sensible...</description>
-    <curve>
-      <piece>
-        <slope>10.0</slope>
-        <intercept>0</intercept>
-      </piece>
-    </curve>
-  </utility>
-  <utility>
-    <id>leisure</id>
-    <name>Leis</name>
+    <name>lux</name>
     <description>Ahhh</description>
     <curve>
-      <piece>
-        <slope>0.3</slope>
-        <intercept>0</intercept>
-      </piece>
+        <maximum>2</maximum>
+        <saturation>2</saturation>
+        <degree>0.95</degree>
     </curve>
   </utility>
-  <utility>
-    <id>sleep</id>
-    <name>Sleep</name>
-    <description>Zzzzzz</description>
-      <curve>
-        <piece>
-          <slope>2.0</slope>
-          <intercept>-6</intercept>
-        </piece>
-        <piece>
-          <slope>0.5</slope>
-          <intercept>3</intercept>
-        </piece>
-        <piece>
-          <slope>0.0</slope>
-          <intercept>7</intercept>
-        </piece>
-      </curve>
-    </utility>
 </utilities>

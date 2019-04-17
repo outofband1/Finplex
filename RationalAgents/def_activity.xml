@@ -25,7 +25,12 @@
     <id>relaxation</id>
     <name>Relax</name>
     <description>For the slightly less dumb</description>
-    
+    <utilities>
+      <utility>
+        <id>leisure</id>
+        <amount>1.0</amount>
+      </utility>
+    </utilities>
   </activity>
   <activity>
     <id>unskilled labor 1</id>

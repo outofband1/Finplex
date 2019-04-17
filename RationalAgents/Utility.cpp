@@ -1,38 +1,34 @@
-#include "Utility.h"
+#include "utility.h"
+#include <math.h>
 
-Utility::LinearCurvePiece::LinearCurvePiece(const double& slope, const double& intercept) :
-    slope_(slope),
-    intercept_(intercept)
-{}
-
-const double& Utility::LinearCurvePiece::getSlope() const
+Utility::Utility(const std::string& name, const std::string& description)
 {
-    return slope_;
+    name_ = name;
+    description_ = description;
 }
 
-const double& Utility::LinearCurvePiece::getSlopeIntercept() const
+void Utility::setCurve(const double& max, const double& saturationAmount, const double& saturationDegree)
 {
-    return intercept_;
+    // solve max(1-e^saturationAmount*x)=saturationDegree*max)
+    max_ = max;
+    coefficient_ = log(-saturationDegree + 1);
+    coefficient_ /= saturationAmount;
 }
 
-void Utility::PieceWiseLinearCurve::addCurvePiece(const double& slope, const double& intercept)
+double Utility::getUtility(const double& amount) const
 {
-    curvePieces_.push_back(LinearCurvePiece(slope, intercept));
+    double u = max_ * (1.0 - exp(coefficient_ * amount));
+    return u;
 }
 
-const std::vector<Utility::LinearCurvePiece>& Utility::PieceWiseLinearCurve::getCurvePieces() const
+double Utility::getMarginalUtility(const double& amount) const
 {
-    return curvePieces_;
+    double mu = max_ * -coefficient_ * exp(coefficient_ * amount);
+    return mu;
 }
 
-Utility::Utility(const std::string& name, const PieceWiseLinearCurve& curve) :
-    Definition(name),
-    curve_(curve)
+double Utility::getAmountFromMU(const double& targetMU) const
 {
-
-}
-
-const Utility::PieceWiseLinearCurve& Utility::getCurve() const
-{
-    return curve_;
+    double res = log(-targetMU / (max_ * coefficient_)) / coefficient_;
+    return res;
 }

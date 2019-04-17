@@ -1,23 +1,43 @@
 #include "DefinitionStorage.h"
+#include "tinyxml2.h"
 #include "Utility.h"
 #include "Commodity.h"
-#include "Activity.h"
-#include "tinyxml2.h"
-
-using namespace tinyxml2;
+#include "Exceptions.h"
+#include <windows.h>
 
 void DefinitionStorage::readDefinitions()
 {
-
-    readUtilityDefs();
-    readActivityDefs(); // depends on utility defs
-    readCommodityDefs(); // depends on utility defs
+    try
+    {
+        readUtilityDefs();
+        //readActivityDefs(); // depends on utility defs
+        readCommodityDefs(); // depends on utility defs
+    }
+    catch (const Exceptions::OneMessage& e)
+    {
+        e.print(std::cout);
+    }
 }
 
-const std::map<std::string, std::shared_ptr<Activity>>& DefinitionStorage::getActivityDefinitions() const
+const std::shared_ptr<Commodity>& DefinitionStorage::getCommodity(const std::string& id) const
+{
+    auto& commodity = commodityDefs_.find(id);
+
+    if (commodity != commodityDefs_.end())
+    {
+        return commodity->second;
+    }
+    else
+    {
+        PITCH(Exceptions::OneMessage, "Commodity not found");
+    }
+}
+
+
+/*const std::map<std::string, std::shared_ptr<Activity>>& DefinitionStorage::getActivityDefinitions() const
 {
     return activityDefs_;
-}
+}*/
 
 const std::map<std::string, std::shared_ptr<Utility>>& DefinitionStorage::getUtilityDefinitions() const
 {
@@ -31,73 +51,87 @@ const std::map<std::string, std::shared_ptr<Commodity>>& DefinitionStorage::getC
 
 void DefinitionStorage::readUtilityDefs()
 {
-    XMLDocument utilityDoc;
+    tinyxml2::XMLDocument utilityDoc;
     utilityDoc.LoadFile(utilityDefFilename_.c_str());
 
-    XMLElement* main = utilityDoc.FirstChildElement("utilities");
+    tinyxml2::XMLElement* main = utilityDoc.FirstChildElement("utilities");
 
     if (main)
     {
-        XMLElement* utility = main->FirstChildElement("utility");
+        tinyxml2::XMLElement* utility = main->FirstChildElement("utility");
         while (utility)
         {
             std::string id = utility->FirstChildElement("id")->GetText();
             std::string name = utility->FirstChildElement("name")->GetText();
             std::string description = utility->FirstChildElement("description")->GetText();
 
-            Utility::PieceWiseLinearCurve utilCurve;
-            XMLElement* curve = utility->FirstChildElement("curve");
-            XMLElement* curvePiece = curve->FirstChildElement("piece");
-            while (curvePiece)
-            {
-                double slope = std::atof(curvePiece->FirstChildElement("slope")->GetText());
-                double intercept = std::atof(curvePiece->FirstChildElement("intercept")->GetText());
-                utilCurve.addCurvePiece(slope, intercept);
+            tinyxml2::XMLElement* curve = utility->FirstChildElement("curve");
 
-                curvePiece = curvePiece->NextSiblingElement();
-            }
+            double maximum = std::atof(curve->FirstChildElement("maximum")->GetText());
+            double saturation = std::atof(curve->FirstChildElement("saturation")->GetText());
+            double degree = std::atof(curve->FirstChildElement("degree")->GetText());
 
-            std::shared_ptr<Utility> util = std::make_shared<Utility>(name, utilCurve);
-            util->setDescription(description);
+            std::shared_ptr<Utility> util = std::make_shared<Utility>(name, description);
+            util->setCurve(maximum, saturation, degree);
 
             utilityDefs_[id] = util;
 
             utility = utility->NextSiblingElement();
         }
     }
+    else
+    {
+        PITCH(Exceptions::OneMessage, "Utility definitions not found");
+    }
 }
 
 void DefinitionStorage::readCommodityDefs()
 {
-    XMLDocument commodityDoc;
+
+    tinyxml2::XMLDocument commodityDoc;
     commodityDoc.LoadFile(commodityDefFilename_.c_str());
 
-    XMLElement* main = commodityDoc.FirstChildElement("commodities");
+    tinyxml2::XMLElement* main = commodityDoc.FirstChildElement("commodities");
 
     if (main)
     {
-        XMLElement* commodity = main->FirstChildElement("commodity");
+        tinyxml2::XMLElement* commodity = main->FirstChildElement("commodity");
         while (commodity)
         {
             std::string id = commodity->FirstChildElement("id")->GetText();
             std::string name = commodity->FirstChildElement("name")->GetText();
             std::string description = commodity->FirstChildElement("description")->GetText();
 
-            std::shared_ptr<Commodity> com = std::make_shared<Commodity>(name);
-            com->setDescription(description);
 
-            XMLElement* utilities = commodity->FirstChildElement("utilities");
+
+            tinyxml2::XMLElement* production = commodity->FirstChildElement("production");
+            double labour = 0.0;
+            if (production)
+            {
+                labour = atof(production->FirstChildElement("labour")->GetText());
+            }
+            FactorsOfProduction productionInput(labour);
+
+            std::shared_ptr<Commodity> com = std::make_shared<Commodity>(name, description, productionInput);
+
+            tinyxml2::XMLElement* utilities = commodity->FirstChildElement("utilities");
             if (utilities)
             {
-                XMLElement* utility = utilities->FirstChildElement("utility");
+                tinyxml2::XMLElement* utility = utilities->FirstChildElement("utility");
                 while (utility)
                 {
                     std::string utilityId = utility->FirstChildElement("id")->GetText();
                     double amount = std::atof(utility->FirstChildElement("amount")->GetText());
 
+                    auto& actualUtility = utilityDefs_.find(utilityId);
+                    if (actualUtility == utilityDefs_.end())
+                    {
+                        PITCH(Exceptions::OneMessage, "Utility definition not found while reading commodities");
+                    }
 
-                    auto& actualUtility = utilityDefs_.find(utilityId)->second;
-                    com->addUtility(actualUtility, amount);
+
+
+                    com->setUtility(actualUtility->second, amount);
 
                     utility = utility->NextSiblingElement();
                 }
@@ -108,9 +142,13 @@ void DefinitionStorage::readCommodityDefs()
             commodity = commodity->NextSiblingElement();
         }
     }
+    else
+    {
+        PITCH(Exceptions::OneMessage, "Commodity definitio0ns not found");
+    }
 }
 
-void DefinitionStorage::readActivityDefs()
+/*void DefinitionStorage::readActivityDefs()
 {
     XMLDocument activityDoc;
     activityDoc.LoadFile(activityDefFilename_.c_str());
@@ -151,4 +189,4 @@ void DefinitionStorage::readActivityDefs()
             activity = activity->NextSiblingElement();
         }
     }
-}
+}*/

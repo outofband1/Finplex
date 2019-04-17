@@ -1,34 +1,24 @@
 #pragma once
-#include <vector>
+#include <string>
 
-#include "Definition.h"
-
-class Utility : public Definition
+class Utility
 {
 public:
-    class LinearCurvePiece
-    {
-    public:
-        LinearCurvePiece(const double& slope, const double& intercept);
-        const double& getSlope() const;
-        const double& getSlopeIntercept() const;
-    private:
-        double slope_, intercept_;
-    };
 
-    class PieceWiseLinearCurve
-    {
-    public:
-        void addCurvePiece(const double& slope, const double& intercept);
-        const std::vector<LinearCurvePiece>& getCurvePieces() const;
-    private:
-        std::vector<LinearCurvePiece> curvePieces_;
-    };
+    Utility(const std::string& name, const std::string& description);
 
-    Utility(const std::string& name, const PieceWiseLinearCurve& curve);
+    void setCurve(const double& max, const double& saturationAmount, const double& saturationDegree);
 
-    const PieceWiseLinearCurve& getCurve() const;
+    double getUtility(const double& amount) const;
+
+    double getMarginalUtility(const double& amount) const;
+
+    double getAmountFromMU(const double& targetMU) const;
 
 private:
-    PieceWiseLinearCurve curve_;
+    double max_;
+    double coefficient_;
+
+    std::string name_;
+    std::string description_;
 };
