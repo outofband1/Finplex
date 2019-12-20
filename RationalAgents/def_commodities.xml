@@ -1,0 +1,22 @@
+<commodities>
+  <commodity>
+    <id>water</id>
+    <name>Water</name>
+    <description>...</description>
+  </commodity>
+  <commodity>
+    <id>carbs</id>
+    <name>Carbs</name>
+    <description>...</description>
+  </commodity>
+  <commodity>
+    <id>protein</id>
+    <name>Protein</name>
+    <description>...</description>
+  </commodity>
+  <commodity>
+    <id>gold</id>
+    <name>Gold</name>
+    <description>...</description>
+  </commodity>
+</commodities>

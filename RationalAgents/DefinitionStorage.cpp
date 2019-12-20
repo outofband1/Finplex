@@ -1,9 +1,11 @@
 #include "DefinitionStorage.h"
 #include "tinyxml2.h"
 #include "Utility.h"
-#include "Commodity.h"
 #include "Exceptions.h"
 #include <windows.h>
+#include "FactorsOfProduction.h"
+#include "CommodityDefinition.h"
+#include <memory>
 
 void DefinitionStorage::readDefinitions()
 {
@@ -11,7 +13,9 @@ void DefinitionStorage::readDefinitions()
     {
         readUtilityDefs();
         //readActivityDefs(); // depends on utility defs
-        readCommodityDefs(); // depends on utility defs
+        readCommodityDefs();
+        readConsumerGoodDefs(); // depends on utility defs
+        readFactorsOfProduction();
     }
     catch (const Exceptions::OneMessage& e)
     {
@@ -19,7 +23,21 @@ void DefinitionStorage::readDefinitions()
     }
 }
 
-const std::shared_ptr<Commodity>& DefinitionStorage::getCommodity(const std::string& id) const
+const std::shared_ptr<CommodityDefinition>& DefinitionStorage::getConsumerGood(const std::string& id) const
+{
+    auto& good = consumerGoodDefs_.find(id);
+
+    if (good != consumerGoodDefs_.end())
+    {
+        return good->second;
+    }
+    else
+    {
+        PITCH(Exceptions::OneMessage, "Consumer good not found");
+    }
+}
+
+const std::shared_ptr<CommodityDefinition>& DefinitionStorage::getCommodity(const std::string& id) const
 {
     auto& commodity = commodityDefs_.find(id);
 
@@ -44,9 +62,9 @@ const std::map<std::string, std::shared_ptr<Utility>>& DefinitionStorage::getUti
     return utilityDefs_;
 }
 
-const std::map<std::string, std::shared_ptr<Commodity>>& DefinitionStorage::getCommodityDefinitions() const
+const std::map<std::string, std::shared_ptr<CommodityDefinition>>& DefinitionStorage::getConsumerGoodDefinitions() const
 {
-    return commodityDefs_;
+    return consumerGoodDefs_;
 }
 
 void DefinitionStorage::readUtilityDefs()
@@ -85,6 +103,58 @@ void DefinitionStorage::readUtilityDefs()
     }
 }
 
+void DefinitionStorage::readConsumerGoodDefs()
+{
+
+    tinyxml2::XMLDocument commodityDoc;
+    commodityDoc.LoadFile(consumerGoodDefFilename_.c_str());
+
+    tinyxml2::XMLElement* main = commodityDoc.FirstChildElement("consumerGoods");
+
+    if (main)
+    {
+        tinyxml2::XMLElement* good = main->FirstChildElement("good");
+        while (good)
+        {
+            std::string id = good->FirstChildElement("id")->GetText();
+            std::string name = good->FirstChildElement("name")->GetText();
+            std::string description = good->FirstChildElement("description")->GetText();
+            std::string isActivityString = good->FirstChildElement("activity")->GetText();
+
+            /*tinyxml2::XMLElement* production = good->FirstChildElement("production");
+            double labour = 0.0;
+            if (production)
+            {
+                labour = atof(production->FirstChildElement("labour")->GetText());
+            }
+            FactorsOfProduction productionInput(labour);*/
+
+            bool isActivity = false;
+
+            if (isActivityString == "true")
+            {
+                isActivity = true;
+            }
+
+            std::shared_ptr<CommodityDefinition> com = std::make_shared<CommodityDefinition>(name, description, isActivity);
+
+            tinyxml2::XMLElement* utilities = good->FirstChildElement("utilities");
+            if (utilities)
+            {
+                readGoodUtils(com, utilities);
+            }
+
+            consumerGoodDefs_[id] = com;
+
+            good = good->NextSiblingElement();
+        }
+    }
+    else
+    {
+        PITCH(Exceptions::OneMessage, "Commodity definitio0ns not found");
+    }
+}
+
 void DefinitionStorage::readCommodityDefs()
 {
 
@@ -102,40 +172,7 @@ void DefinitionStorage::readCommodityDefs()
             std::string name = commodity->FirstChildElement("name")->GetText();
             std::string description = commodity->FirstChildElement("description")->GetText();
 
-
-
-            tinyxml2::XMLElement* production = commodity->FirstChildElement("production");
-            double labour = 0.0;
-            if (production)
-            {
-                labour = atof(production->FirstChildElement("labour")->GetText());
-            }
-            FactorsOfProduction productionInput(labour);
-
-            std::shared_ptr<Commodity> com = std::make_shared<Commodity>(name, description, productionInput);
-
-            tinyxml2::XMLElement* utilities = commodity->FirstChildElement("utilities");
-            if (utilities)
-            {
-                tinyxml2::XMLElement* utility = utilities->FirstChildElement("utility");
-                while (utility)
-                {
-                    std::string utilityId = utility->FirstChildElement("id")->GetText();
-                    double amount = std::atof(utility->FirstChildElement("amount")->GetText());
-
-                    auto& actualUtility = utilityDefs_.find(utilityId);
-                    if (actualUtility == utilityDefs_.end())
-                    {
-                        PITCH(Exceptions::OneMessage, "Utility definition not found while reading commodities");
-                    }
-
-
-
-                    com->setUtility(actualUtility->second, amount);
-
-                    utility = utility->NextSiblingElement();
-                }
-            }
+            std::shared_ptr<CommodityDefinition> com = std::make_shared<CommodityDefinition>(name, description, false);
 
             commodityDefs_[id] = com;
 
@@ -145,6 +182,106 @@ void DefinitionStorage::readCommodityDefs()
     else
     {
         PITCH(Exceptions::OneMessage, "Commodity definitio0ns not found");
+    }
+}
+
+void DefinitionStorage::readFactorsOfProduction()
+{
+
+    tinyxml2::XMLDocument fopDoc;
+    fopDoc.LoadFile(fopFilename_.c_str());
+
+    tinyxml2::XMLElement* main = fopDoc.FirstChildElement("factorsOfProduction");
+
+    if (main)
+    {
+        tinyxml2::XMLElement* fop = main->FirstChildElement("product");
+        while (fop)
+        {
+            std::string id = fop->FirstChildElement("id")->GetText();
+
+            std::shared_ptr<CommodityDefinition> product;
+
+            auto& consumerGood = consumerGoodDefs_.find(id);
+            if (consumerGood != consumerGoodDefs_.end()) // consumer good found
+            {
+                product = consumerGood->second;
+            }
+            else
+            {
+                auto& commodity = commodityDefs_.find(id);
+                if (commodity != commodityDefs_.end()) //commodity found
+                {
+                    product = commodity->second;
+                }
+            }
+
+            if (product != nullptr)
+            {
+                FactorsOfProduction newFop;
+
+                double labour = atof(fop->FirstChildElement("labour")->GetText());
+                newFop.setLabout(labour);
+
+                tinyxml2::XMLElement* inputs = fop->FirstChildElement("inputs");
+                if (inputs)
+                {
+                    tinyxml2::XMLElement* input = inputs->FirstChildElement("input");
+                    std::string id = input->FirstChildElement("id")->GetText();
+                    while (input)
+                    {
+                        std::string id = input->FirstChildElement("id")->GetText();
+                        auto& it = commodityDefs_.find(id);
+                        if (it != commodityDefs_.end())
+                        {
+                            std::shared_ptr<CommodityDefinition> commodity = it->second;
+                            double amount = atof(input->FirstChildElement("amount")->GetText());
+
+                            newFop.addInput(commodity, amount);
+                        }
+                        else
+                        {
+                            PITCH(Exceptions::OneMessage, "Input commodity not found while reading fops");
+                        }
+
+                        input = input->NextSiblingElement();
+
+                    }
+                }
+
+                product->setFactorsOfProduction(newFop);
+            }
+            else
+            {
+                PITCH(Exceptions::OneMessage, "Product not found while reading fops");
+            }
+
+            fop = fop->NextSiblingElement();
+        }
+    }
+    else
+    {
+        PITCH(Exceptions::OneMessage, "Commodity definitio0ns not found");
+    }
+}
+
+void DefinitionStorage::readGoodUtils(std::shared_ptr<CommodityDefinition> good, tinyxml2::XMLElement* utilities)
+{
+    tinyxml2::XMLElement* utility = utilities->FirstChildElement("utility");
+    while (utility)
+    {
+        std::string utilityId = utility->FirstChildElement("id")->GetText();
+        double amount = std::atof(utility->FirstChildElement("amount")->GetText());
+
+        auto& actualUtility = utilityDefs_.find(utilityId);
+        if (actualUtility == utilityDefs_.end())
+        {
+            PITCH(Exceptions::OneMessage, "Utility definition not found while reading commodities");
+        }
+
+        good->setUtility(actualUtility->second, amount);
+
+        utility = utility->NextSiblingElement();
     }
 }
 

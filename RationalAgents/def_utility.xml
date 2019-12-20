@@ -24,9 +24,19 @@
     <name>lux</name>
     <description>Ahhh</description>
     <curve>
-        <maximum>2</maximum>
-        <saturation>2</saturation>
+        <maximum>3</maximum>
+        <saturation>1</saturation>
         <degree>0.95</degree>
+    </curve>
+  </utility>
+  <utility>
+    <id>leisure</id>
+    <name>r and r</name>
+    <description>Ahhh</description>
+    <curve>
+      <maximum>5</maximum>
+      <saturation>1</saturation>
+      <degree>0.95</degree>
     </curve>
   </utility>
 </utilities>

@@ -1,6 +1,10 @@
 #include "MarketSolver.h"
 #include <iostream>
 #include <random>
+#include "CommodityInstance.h"
+#include "CommodityDefinition.h"
+#include "ConsumerMarket.h"
+#include "TradableGood.h"
 
 using namespace market_solver;
 
@@ -24,160 +28,357 @@ double Result::getPrice() const
     return price_;
 }
 
-void Solver::registerProduct(const std::shared_ptr<CommodityInstance> & product, const double & capacity, const double & minPrice)
+void Solver::clear()
+{
+    constraints_.clear();
+}
+
+void Solver::registerProduct(const TradableGood& tradableGood, const double & capacity, const double & minPrice)
 {
     ProductConstraint newConstraint;
+
     newConstraint.maximumAmount_ = capacity;
     newConstraint.minimumPrice_ = minPrice;
 
-    constraints_[product] = newConstraint;
+    constraints_[tradableGood] = newConstraint;
 }
 
-void Solver::findPurchases(double scale, double budget, bool pricesLocked, std::map<std::shared_ptr<CommodityInstance>, Result>& results)
+void Solver::refreshMinimumPrices(std::map<std::shared_ptr<CommodityDefinition>, CommodityBalance>& balance,
+                                  std::map<TradableGood, PriceAndAmount>& pandas,
+                                  const double& normalizationFactor)
 {
-    results.clear();
+    bool done = true;
+    do // loop until stable
+    {
+        done = true;
+        for (auto& com : balance)
+        {
+            double oldPrice = com.second.price;
+            double minPrice = com.second.priceAdd;
+            minPrice += com.first->getFactorsOfProduction().getLabour() * 10.0 * normalizationFactor; // TODO hourly wage
 
-    std::map<std::shared_ptr<CommodityInstance>, PriceAndAmount> myPandas;
+            for (auto& input : com.first->getFactorsOfProduction().getInputs())
+            {
+                auto& inputBalance = balance.find(input.commodity_);
+                minPrice += inputBalance->second.price * input.amount_;
+            }
+
+            com.second.price = minPrice;
+
+            if (oldPrice != minPrice)
+            {
+                done = false;
+            }
+        }
+    }
+    while (!done);
+
+    for (auto& panda : pandas)
+    {
+        double minPrice = 0.0;
+        auto& comDef = panda.first.getCommodity()->getCommodityDefinition();
+        minPrice += comDef->getFactorsOfProduction().getLabour() * 10.0 * normalizationFactor; // TODO hourly wage
+        for (auto& input : comDef->getFactorsOfProduction().getInputs())
+        {
+            auto& inputBalance = balance.find(input.commodity_);
+            minPrice += inputBalance->second.price * input.amount_;
+        }
+        panda.second.minPrice_ = minPrice;
+    }
+}
+
+void Solver::updateNeeded(std::map<std::shared_ptr<CommodityDefinition>, CommodityBalance>& balance, std::map<std::shared_ptr<CommodityDefinition>, CommodityBalance>::iterator& comBalance, double add)
+{
+    comBalance->second.needed += add;
+
+    for (auto& input : comBalance->first->getFactorsOfProduction().getInputs())
+    {
+        auto& inputBalance = balance.find(input.commodity_);
+        double needed = input.amount_ * add;
+        updateNeeded(balance, inputBalance, needed);
+    }
+}
+
+void Solver::refreshCommodityInput(std::map<std::shared_ptr<CommodityDefinition>, CommodityBalance>& balance,
+                                   const std::map<TradableGood, PriceAndAmount>& pandas)
+{
+    for (auto& com : balance)
+    {
+        com.second.needed = 0;
+    }
+
+    for (auto& panda : pandas)
+    {
+        auto& comDef = panda.first.getCommodity()->getCommodityDefinition();
+        for (auto& input : comDef->getFactorsOfProduction().getInputs())
+        {
+            auto& inputBalance = balance.find(input.commodity_);
+
+            double needed = input.amount_ * panda.second.amount_;
+            updateNeeded(balance, inputBalance, needed);
+        }
+    }
+}
+
+void Solver::findPurchases(double scale, double budget, bool pricesLocked, std::map<TradableGood, Result>& results)
+{
+    /*
+    normalization factor is used to bring budget and prices into a fixed range. This makes it much easier to select
+    a proper line search length. Resolution does (theoretically?) suffer at higher budgets/prices.
+    */
+    double normalizationFactor = 100.0 / budget;
+
+    budget *= normalizationFactor;
+
+    if (constraints_.empty())
+    {
+        return;
+    }
+
+    std::map<std::shared_ptr<CommodityDefinition>, CommodityBalance> commoditiesBalance;
+    std::map<TradableGood, PriceAndAmount > myPandas;
 
     for (auto& constraint : constraints_)
     {
-        if (constraint.second.maximumAmount_ > 10E-6)
+        if (constraint.first.getCommodity()->getCommodityDefinition()->getUtilities().size() == 0)
         {
-            PriceAndAmount workingPanda;
-            workingPanda.amount_ = 0.0;
-            workingPanda.mu_ = 0.0;
-            workingPanda.minPrice_ = constraint.second.minimumPrice_;
-            workingPanda.capacity_ = constraint.second.maximumAmount_;
-            workingPanda.price_ = constraint.second.minimumPrice_;
+            auto& comDef = constraint.first.getCommodity()->getCommodityDefinition();
 
-            workingPanda.active_ = true;
+            auto& balance = commoditiesBalance.find(comDef);
+            if (balance != commoditiesBalance.end())
+            {
+                commoditiesBalance[comDef].capacity += constraint.second.maximumAmount_;
+            }
+            else
+            {
+                commoditiesBalance[comDef].capacity = constraint.second.maximumAmount_;
+                commoditiesBalance[comDef].needed = 0.0;
+                commoditiesBalance[comDef].priceAdd = 0.0;
+            }
+        }
 
-            myPandas[constraint.first] = workingPanda;
+        else
+        {
+            if (constraint.second.maximumAmount_ > 10E-6)
+            {
+                PriceAndAmount workingPanda;
+                workingPanda.amount_ = 0.0;
+                workingPanda.mu_ = 0.0;
+                workingPanda.minPrice_ = constraint.second.minimumPrice_ * normalizationFactor;
+                workingPanda.capacity_ = constraint.second.maximumAmount_;
+                workingPanda.price_ = constraint.second.minimumPrice_ * normalizationFactor;
+                workingPanda.effectivePrice_ = (constraint.second.minimumPrice_ /*+ 10.0*/ /* TODO */) * normalizationFactor;
+
+                workingPanda.active_ = true;
+
+                myPandas[constraint.first] = workingPanda;
+            }
         }
     }
-
-    double spend = 0.0;
-
-    refreshUtilities(scale, myPandas);
 
     std::random_device rd;
     std::mt19937 g(rd());
     std::uniform_real_distribution<double> distribution(-1.0, 1.0);
 
-    int it = 0;
-    double lastSpend = 0.0;
-    while (spend <= budget)
+    bool done = false;
+    while (!done)
     {
-        it++;
-
-        auto& topPanda = myPandas.begin();
-        double topMuOverPrice = -1.0;
-
-        int candidateIndex = 1;
-        for (auto& candidatePanda = myPandas.begin(); candidatePanda != myPandas.end(); candidatePanda++)
+        if (!pricesLocked)
         {
-            if (!candidatePanda->second.active_)
+            refreshMinimumPrices(commoditiesBalance, myPandas, normalizationFactor);
+            for (auto& panda : myPandas)
             {
-                continue;
-            }
-            // amount not important - just introduces a bit of variance when mu/p are equal
-            double shuffleEffect = distribution(g) * 10E-6;
-
-            double muOverPrice = candidatePanda->second.mu_ / candidatePanda->second.price_ + shuffleEffect;
-            if (muOverPrice > topMuOverPrice)
-            {
-                topPanda = candidatePanda;
-                topMuOverPrice = muOverPrice;
+                panda.second.amount_ = 0.0;
+                panda.second.price_ = panda.second.minPrice_;
             }
         }
 
-        if (topMuOverPrice < 0.0)
-        {
-            break;
-        }
-
-        //double line = (budget - spend) / budget;
-        double line = (budget - spend) * 0.01;
-        if (line < 0.001)
-        {
-            line = 0.001;
-        }
-
-        if (topPanda->second.amount_ + 0.1 * line < topPanda->second.capacity_)
-        {
-            topPanda->second.amount_ += 0.1 * line;
-        }
-        else
-        {
-            topPanda->second.amount_ = topPanda->second.capacity_;
-
-            if (!pricesLocked)
-            {
-                topPanda->second.price_ += 0.1 * line;
-            }
-            else
-            {
-                // nothing left to adjust, ignore in future iterations
-                topPanda->second.active_ = false;
-            }
-        }
-
-        lastSpend = spend;
-        spend = 0.0;
-        for (auto& panda : myPandas)
-        {
-            spend += panda.second.price_ * panda.second.amount_;
-        }
+        double spend = 0.0;
 
         refreshUtilities(scale, myPandas);
 
-        if (spend <= lastSpend)
+        int it = 0;
+        double lastSpend = 0.0;
+        while (spend <= budget)
         {
-            break;
+            it++;
+
+            auto& topPanda = myPandas.begin();
+            double topMuOverPrice = -1.0;
+
+            for (auto& candidatePanda = myPandas.begin(); candidatePanda != myPandas.end(); candidatePanda++)
+            {
+                if (!candidatePanda->second.active_)
+                {
+                    continue;
+                }
+                // amount not important - just introduces a bit of variance when mu/p are equal
+                // otherwise order of sold identical products always the same. This way distributes sales among sellers
+                double shuffleEffect = distribution(g) * 10E-6;
+
+                candidatePanda->second.effectivePrice_ = candidatePanda->second.price_;
+                if (candidatePanda->first.getCommodity()->getCommodityDefinition()->isActivity())
+                {
+                    //candidatePanda->second.effectivePrice_ += 10.0 * normalizationFactor; // TODO hourly wage
+                }
+
+                double muOverPrice = candidatePanda->second.mu_ / candidatePanda->second.effectivePrice_ + shuffleEffect;
+                if (muOverPrice > topMuOverPrice)
+                {
+                    topPanda = candidatePanda;
+                    topMuOverPrice = muOverPrice;
+                }
+            }
+
+            double priceLine = (budget - spend) * 0.001;
+            double amountLine = (budget - spend) * 0.001;
+            if (priceLine < 0.001)
+            {
+                priceLine = 0.001;
+            }
+
+            if (topPanda->second.amount_ + amountLine < topPanda->second.capacity_)
+            {
+                topPanda->second.amount_ += amountLine;
+            }
+            else
+            {
+                topPanda->second.amount_ = topPanda->second.capacity_;
+
+                if (!pricesLocked)
+                {
+                    topPanda->second.price_ += priceLine;
+                }
+                else
+                {
+                    // nothing left to adjust, ignore in future iterations
+                    topPanda->second.active_ = false;
+                }
+            }
+
+            lastSpend = spend;
+            spend = 0.0;
+            for (auto& panda : myPandas)
+            {
+                spend += panda.second.price_ * panda.second.amount_;
+            }
+
+            refreshUtilities(scale, myPandas);
+
+            if (spend <= lastSpend)
+            {
+                break;
+            }
+        }
+
+        done = true;
+        if (!pricesLocked)
+        {
+            refreshCommodityInput(commoditiesBalance, myPandas);
+
+            for (auto& balance : commoditiesBalance)
+            {
+                if (balance.second.capacity < balance.second.needed)
+                {
+                    double line = (balance.second.needed - balance.second.capacity) * 0.1;
+
+                    if (line > 0.5)
+                    {
+                        line = 0.5;
+                    }
+
+                    if (line < 0.01)
+                    {
+                        line = 0.01;
+                    }
+                    balance.second.priceAdd += line;
+                    done = false;
+                }
+            }
         }
     }
 
+    results.clear();
+
+    // map consumer goods to results
     for (auto& panda : myPandas)
     {
         Result newResult;
         newResult.setAmountSold(panda.second.amount_);
-        newResult.setPrice(panda.second.price_);
+        newResult.setPrice(panda.second.price_ / normalizationFactor);
         results[panda.first] = newResult;
     }
 
-    std::cout << "ITERATIONS: " << it << std::endl;
-
-    /*double totalSpend = 0.0;
-
-    for (auto& panda : myPandas)
+    // map commodities to results
+    // if multiple same commodities split sales
+    for (auto& balance : commoditiesBalance)
     {
-    std::cout << panda.first->getName() << ":" << std::endl;
-    std::cout << panda.second.amount_ << " at price: " << panda.second.price_ << std::endl;
-    std::cout << panda.second.mu_ / panda.second.price_ << std::endl << std::endl;
+        auto& comDef = balance.first;
+        double needed = balance.second.needed;
 
-    totalSpend += panda.second.amount_ * panda.second.price_;
+        std::map <TradableGood, double> potentialItems;
+
+        for (auto& constraint : constraints_)
+        {
+            if (constraint.first.getCommodity()->getCommodityDefinition() == comDef && constraint.second.maximumAmount_ > 10E-6)
+            {
+                potentialItems[constraint.first] = constraint.second.maximumAmount_;
+            }
+        }
+
+        while (needed > 10E-6 && potentialItems.size() > 0)
+        {
+            int remainingPotentialSellers = static_cast<int>(potentialItems.size());
+            double amountperSeller = needed / remainingPotentialSellers;
+
+            for (std::map <TradableGood, double>::iterator item = potentialItems.begin(); item != potentialItems.end(); item++)
+            {
+                double maxAmount = item->second;
+                double actualAmount = amountperSeller;
+
+                bool itemDone = false;
+                if (maxAmount <= amountperSeller)
+                {
+                    actualAmount = maxAmount;
+                    itemDone = true;
+                }
+
+                needed -= actualAmount;
+
+                Result newResult;
+                newResult.setPrice(balance.second.price / normalizationFactor);
+                newResult.setAmountSold(actualAmount);
+
+                results[item->first] = newResult;
+
+                if (itemDone)
+                {
+                    potentialItems.erase(item);
+                    break;
+                }
+            }
+        }
     }
 
-    std::cout << "Total spend: " << totalSpend << std::endl << std::endl;*/
 }
 
-void Solver::refreshUtilities(double scale, std::map<std::shared_ptr<CommodityInstance>, PriceAndAmount>& pandas)
+void Solver::refreshUtilities(double scale, std::map<TradableGood, PriceAndAmount>& pandas)
 {
     calculateUtilityAmounts(scale, pandas);
 
     for (auto& panda2 : pandas)
     {
-        panda2.second.mu_ = getMarginalUtility(panda2.first);
+        panda2.second.mu_ = getMarginalUtility(panda2.first.getCommodity());
     }
 }
 
-void Solver::calculateUtilityAmounts(double scale, std::map<std::shared_ptr<CommodityInstance>, PriceAndAmount>& pandas)
+void Solver::calculateUtilityAmounts(double scale, std::map<TradableGood, PriceAndAmount>& pandas)
 {
     utilityAmounts_.clear();
     for (auto& panda : pandas)
     {
         double amount = panda.second.amount_ / scale;
-        for (auto& util : panda.first->getCommodity()->getUtilities())
+        for (auto& util : panda.first.getCommodity()->getCommodityDefinition()->getUtilities())
         {
             double weight = util.second;
             auto& utilityAmount = utilityAmounts_.find(util.first);
@@ -189,15 +390,14 @@ void Solver::calculateUtilityAmounts(double scale, std::map<std::shared_ptr<Comm
             {
                 utilityAmounts_[util.first] = weight * amount;
             }
-
         }
     }
 }
 
-double Solver::getMarginalUtility(const std::shared_ptr<CommodityInstance>& product) const
+double Solver::getMarginalUtility(const std::shared_ptr<GenericCommodity>& product) const
 {
     double mu = 0.0;
-    for (const auto& util : product->getCommodity()->getUtilities())
+    for (const auto& util : product->getCommodityDefinition()->getUtilities())
     {
         auto& it = utilityAmounts_.find(util.first);
         double utilityAmount = it->second;
@@ -207,12 +407,12 @@ double Solver::getMarginalUtility(const std::shared_ptr<CommodityInstance>& prod
     return mu;
 }
 
-void market_solver::printResults(const std::map<std::shared_ptr<CommodityInstance>, Result>& results)
+void market_solver::printResults(const std::map<TradableGood, Result> & results)
 {
     double spend = 0.0;
     for (auto& result : results)
     {
-        std::cout << "Product: " << result.first->getName() << " (" << result.first->getCommodity()->getName() << ")" << std::endl;
+        std::cout << "Product: " << result.first.getCommodity()->getName() << " (" << result.first.getCommodity()->getCommodityDefinition()->getName() << ")" << std::endl;
         double amount = result.second.getAmountSold();
         double price = result.second.getPrice();
 

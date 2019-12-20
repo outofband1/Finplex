@@ -154,34 +154,47 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Commodity.cpp" />
-    <ClCompile Include="CommodityInstance.cpp" />
-    <ClCompile Include="CommodityProducer.cpp" />
+    <ClCompile Include="Agent.cpp" />
+    <ClCompile Include="ConsumerMarket.cpp" />
+    <ClCompile Include="Factory.cpp" />
     <ClCompile Include="DefinitionStorage.cpp" />
-    <ClCompile Include="Good.cpp" />
+    <ClCompile Include="Entity.cpp" />
+    <ClCompile Include="CommodityDefinition.cpp" />
+    <ClCompile Include="Inventory.cpp" />
     <ClCompile Include="MarketSolver.cpp" />
-    <ClCompile Include="Producer.cpp" />
+    <ClCompile Include="Company.cpp" />
     <ClCompile Include="FactorsOfProduction.cpp" />
     <ClCompile Include="tinyxml2.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="TradableGood.cpp" />
     <ClCompile Include="utility.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CommodityProducer.h" />
-    <ClInclude Include="Commodity.h" />
+    <ClInclude Include="Agent.h" />
     <ClInclude Include="CommodityInstance.h" />
+    <ClInclude Include="Factory.h" />
     <ClInclude Include="DefinitionStorage.h" />
+    <ClInclude Include="Entity.h" />
     <ClInclude Include="Exceptions.h" />
-    <ClInclude Include="good.h" />
+    <ClInclude Include="CommodityDefinition.h" />
+    <ClInclude Include="ConsumerMarket.h" />
+    <ClInclude Include="Inventory.h" />
     <ClInclude Include="MarketSolver.h" />
-    <ClInclude Include="Producer.h" />
+    <ClInclude Include="Company.h" />
     <ClInclude Include="FactorsOfProduction.h" />
+    <ClInclude Include="Facility.h" />
+    <ClInclude Include="SimulationLocal.h" />
     <ClInclude Include="tinyxml2.h" />
+    <ClInclude Include="TradableGood.h" />
+    <ClInclude Include="TransportJob.h" />
     <ClInclude Include="utility.h" />
+    <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="def_activity.xml" />
-    <Xml Include="def_commodity.xml" />
+    <Xml Include="def_commodities.xml" />
+    <Xml Include="def_consumerGoods.xml" />
+    <Xml Include="def_fop.xml" />
     <Xml Include="def_utility.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

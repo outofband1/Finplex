@@ -1,0 +1,99 @@
+<factorsOfProduction>
+
+  <product>
+    <id>water</id>
+    <labour>1.0</labour>
+  </product>
+  
+  <product>
+    <id>carbs</id>
+    <labour>1.0</labour>
+    <inputs>
+      <input>
+        <id>water</id>
+        <amount>0.4</amount>
+      </input>
+    </inputs>
+  </product>
+
+  <product>
+    <id>protein</id>
+    <labour>1.0</labour>
+    <inputs>
+      <input>
+        <id>water</id>
+        <amount>0.2</amount>
+      </input>
+      <input>
+        <id>carbs</id>
+        <amount>0.4</amount>
+      </input>
+    </inputs>
+  </product>
+  
+  <product>
+    <id>gold</id>
+    <labour>1.0</labour>
+  </product>
+
+  <product>
+    <id>meal</id>
+    <labour>1.0</labour>
+    <inputs>
+      <input>
+        <id>protein</id>
+        <amount>0.4</amount>
+      </input>
+      <input>
+        <id>carbs</id>
+        <amount>0.6</amount>
+      </input>
+      <input>
+        <id>water</id>
+        <amount>0.4</amount>
+      </input>
+    </inputs>
+  </product>
+
+  <product>
+    <id>beer</id>
+    <labour>1.0</labour>
+    <inputs>
+      <input>
+        <id>carbs</id>
+        <amount>0.2</amount>
+      </input>
+      <input>
+        <id>water</id>
+        <amount>2.0</amount>
+      </input>
+    </inputs>
+  </product>
+
+  <product>
+    <id>luxuries</id>
+    <labour>2.0</labour>
+    <inputs>
+      <input>
+        <id>gold</id>
+        <amount>0.1</amount>
+      </input>
+    </inputs>
+  </product>
+  
+  <product>
+    <id>bar</id>
+    <labour>1.5</labour>
+    <inputs>
+      <input>
+        <id>carbs</id>
+        <amount>0.1</amount>
+      </input>
+      <input>
+        <id>water</id>
+        <amount>1.0</amount>
+      </input>
+    </inputs>
+  </product>
+  
+</factorsOfProduction>
